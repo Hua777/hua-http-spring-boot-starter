@@ -23,6 +23,7 @@ hua-http-spring-boot-starter
 @HuaPost
 @HuaPut
 @HuaDelete
+@HuaToken
 
 // PARAMETER
 @HuaParam

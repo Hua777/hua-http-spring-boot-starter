@@ -2,15 +2,13 @@ package com.hua.sss.huahttp.config;
 
 import com.google.gson.Gson;
 import com.hua.sss.huahttp.annotation.HuaHttp;
-import com.hua.sss.huahttp.annotation.method.HuaDelete;
-import com.hua.sss.huahttp.annotation.method.HuaGet;
-import com.hua.sss.huahttp.annotation.method.HuaPost;
-import com.hua.sss.huahttp.annotation.method.HuaPut;
+import com.hua.sss.huahttp.annotation.method.*;
 import com.hua.sss.huahttp.annotation.param.HuaBody;
 import com.hua.sss.huahttp.annotation.param.HuaHeader;
 import com.hua.sss.huahttp.annotation.param.HuaParam;
 import com.hua.sss.huahttp.annotation.param.HuaPath;
 import com.hua.sss.huahttp.tool.HttpTool;
+import com.hua.sss.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -66,6 +64,25 @@ public class HttpHandler implements InvocationHandler {
             for (int i = 0; i < headerNames.length; ++i) {
                 headers.put(getValue(headerNames[i]), getValue(headerValues[i]));
             }
+        }
+
+        //endregion
+
+        //region 处理 Token
+
+        HuaToken huaToken = method.getAnnotation(HuaToken.class);
+
+        if (huaToken != null) {
+
+            String key = getValue(huaToken.key());
+            String iss = getValue(huaToken.iss());
+            String sub = getValue(huaToken.sub());
+            long iat = Long.parseLong(getValue(huaToken.issuedAtTimeThresholdMs()));
+            long vp = Long.parseLong(getValue(huaToken.validityPeriodMs()));
+
+            String token = TokenTool.createJWTByHMAC256(key, iss, sub, iat, vp);
+
+            headers.put(getValue(huaToken.name()), token);
         }
 
         //endregion
