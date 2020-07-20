@@ -193,6 +193,8 @@ public class HttpHandler implements InvocationHandler {
         String result = HttpTool.reqJson(fullUrl, methodName, params, bodies, headers);
         Class<?> returnType = method.getReturnType();
         switch (returnType.getTypeName()) {
+            case "void":
+                return null;
             case "java.lang.String":
                 return result;
             case "java.lang.Integer":
