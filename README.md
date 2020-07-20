@@ -8,7 +8,7 @@ hua-http-spring-boot-starter
 <dependency>
     <groupId>com.hua.sss</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.0-RELEASE</version>
+    <version>1.0.2-RELEASE</version>
 </dependency>
 ```
 
