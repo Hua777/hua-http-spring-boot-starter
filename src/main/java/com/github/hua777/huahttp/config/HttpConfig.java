@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.config;
+package com.github.hua777.huahttp.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

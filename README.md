@@ -6,9 +6,9 @@ hua-http-spring-boot-starter
 
 ```xml
 <dependency>
-    <groupId>com.hua.sss</groupId>
+    <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.3-RELEASE</version>
+    <version>1.0.0-RELEASE</version>
 </dependency>
 ```
 

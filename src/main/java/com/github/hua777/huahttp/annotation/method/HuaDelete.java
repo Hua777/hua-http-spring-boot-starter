@@ -1,10 +1,10 @@
-package com.hua.sss.huahttp.annotation.method;
+package com.github.hua777.huahttp.annotation.method;
 
 import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-public @interface HuaPost {
+public @interface HuaDelete {
     String value();
 }

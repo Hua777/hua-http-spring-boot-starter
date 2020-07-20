@@ -1,14 +1,15 @@
-package com.hua.sss.huahttp.config;
+package com.github.hua777.huahttp.config;
 
+import com.github.hua777.huahttp.annotation.HuaHttp;
+import com.github.hua777.huahttp.annotation.method.*;
 import com.google.gson.Gson;
-import com.hua.sss.huahttp.annotation.HuaHttp;
 import com.hua.sss.huahttp.annotation.method.*;
-import com.hua.sss.huahttp.annotation.param.HuaBody;
-import com.hua.sss.huahttp.annotation.param.HuaHeader;
-import com.hua.sss.huahttp.annotation.param.HuaParam;
-import com.hua.sss.huahttp.annotation.param.HuaPath;
-import com.hua.sss.huahttp.tool.HttpTool;
-import com.hua.sss.huahttp.tool.TokenTool;
+import com.github.hua777.huahttp.annotation.param.HuaBody;
+import com.github.hua777.huahttp.annotation.param.HuaHeader;
+import com.github.hua777.huahttp.annotation.param.HuaParam;
+import com.github.hua777.huahttp.annotation.param.HuaPath;
+import com.github.hua777.huahttp.tool.HttpTool;
+import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;

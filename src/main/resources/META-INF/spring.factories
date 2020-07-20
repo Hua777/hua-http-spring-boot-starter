@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.hua.sss.huahttp.config.HttpConfig
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.github.hua777.huahttp.config.HttpConfig

@@ -1,6 +1,6 @@
-package com.hua.sss.huahttp.config;
+package com.github.hua777.huahttp.config;
 
-import com.hua.sss.huahttp.annotation.HuaHttp;
+import com.github.hua777.huahttp.annotation.HuaHttp;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

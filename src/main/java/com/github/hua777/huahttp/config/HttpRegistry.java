@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.config;
+package com.github.hua777.huahttp.config;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;

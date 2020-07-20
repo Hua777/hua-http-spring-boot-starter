@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.config;
+package com.github.hua777.huahttp.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

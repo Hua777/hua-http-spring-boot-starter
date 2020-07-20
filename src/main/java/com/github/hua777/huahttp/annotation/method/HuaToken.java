@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.annotation.method;
+package com.github.hua777.huahttp.annotation.method;
 
 import java.lang.annotation.*;
 

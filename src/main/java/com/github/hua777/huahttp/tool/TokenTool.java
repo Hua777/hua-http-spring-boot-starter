@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.tool;
+package com.github.hua777.huahttp.tool;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;

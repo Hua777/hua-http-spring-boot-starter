@@ -1,4 +1,4 @@
-package com.hua.sss;
+package com.github.hua777;
 
 import org.junit.Test;
 

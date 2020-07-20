@@ -1,11 +1,11 @@
-package com.hua.sss.huahttp.annotation.param;
+package com.github.hua777.huahttp.annotation.param;
 
 import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.METHOD})
-public @interface HuaHeader {
+public @interface HuaParam {
     String name() default "";
 
     String[] names() default "";

@@ -1,4 +1,4 @@
-package com.hua.sss.huahttp.tool;
+package com.github.hua777.huahttp.tool;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
