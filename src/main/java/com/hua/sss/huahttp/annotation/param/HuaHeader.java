@@ -8,8 +8,6 @@ import java.lang.annotation.*;
 public @interface HuaHeader {
     String name() default "";
 
-    String value() default "";
-
     String[] names() default "";
 
     String[] values() default "";

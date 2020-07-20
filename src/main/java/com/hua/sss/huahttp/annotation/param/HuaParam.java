@@ -4,9 +4,13 @@ import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER})
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 public @interface HuaParam {
     String name() default "";
+
+    String[] names() default "";
+
+    String[] values() default "";
 
     String method() default "";
 }

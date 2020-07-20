@@ -43,61 +43,20 @@ public class HttpHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
-        HuaHttp huaHttp = interfaceClass.getAnnotation(HuaHttp.class);
-
-        String baseUrl = getValue(huaHttp.value());
-
-        //region 处理 Headers
-
-        HuaHeader methodHeader = method.getAnnotation(HuaHeader.class);
 
         HashMap<String, String> headers = new HashMap<>();
+        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> bodies = new HashMap<>();
 
-        if (methodHeader != null) {
-            String[] headerNames = methodHeader.names();
-            String[] headerValues = methodHeader.values();
-
-            if (headerNames.length != headerValues.length) {
-                throw new InvalidParameterException("Header names 与 values 长度不匹配。");
-            }
-
-            for (int i = 0; i < headerNames.length; ++i) {
-                headers.put(getValue(headerNames[i]), getValue(headerValues[i]));
-            }
-        }
-
-        //endregion
-
-        //region 处理 Token
-
-        HuaToken huaToken = method.getAnnotation(HuaToken.class);
-
-        if (huaToken != null) {
-
-            String key = getValue(huaToken.key());
-            String iss = getValue(huaToken.iss());
-            String sub = getValue(huaToken.sub());
-            long iat = Long.parseLong(getValue(huaToken.issuedAtTimeThresholdMs()));
-            long vp = Long.parseLong(getValue(huaToken.validityPeriodMs()));
-
-            String token = TokenTool.createJWTByHMAC256(key, iss, sub, iat, vp);
-
-            headers.put(getValue(huaToken.name()), token);
-        }
-
-        //endregion
-
+        //region 处理地址与请求名
+        HuaHttp huaHttp = interfaceClass.getAnnotation(HuaHttp.class);
         HuaGet huaGet = method.getAnnotation(HuaGet.class);
         HuaPost huaPost = method.getAnnotation(HuaPost.class);
         HuaPut huaPut = method.getAnnotation(HuaPut.class);
         HuaDelete huaDelete = method.getAnnotation(HuaDelete.class);
-
-        //region 处理地址与请求名
-
+        String baseUrl = getValue(huaHttp.value());
         String subUrl = "";
-
         String methodName = "";
-
         if (huaGet != null) {
             methodName = "GET";
             subUrl = getValue(huaGet.value());
@@ -111,19 +70,84 @@ public class HttpHandler implements InvocationHandler {
             methodName = "DELETE";
             subUrl = getValue(huaDelete.value());
         }
-
         String fullUrl = baseUrl + subUrl;
-
         if (fullUrl.equals("")) {
             throw new InvalidParameterException("请求地址为空！");
         }
+        //endregion
 
+        //region 处理 Token
+        HuaToken huaToken = method.getAnnotation(HuaToken.class);
+        if (huaToken != null) {
+            String key = getValue(huaToken.key());
+            String iss = getValue(huaToken.iss());
+            String sub = getValue(huaToken.sub());
+            long iat = Long.parseLong(getValue(huaToken.issuedAtTimeThresholdMs()));
+            long vp = Long.parseLong(getValue(huaToken.validityPeriodMs()));
+            String token = TokenTool.createJWTByHMAC256(key, iss, sub, iat, vp);
+            headers.put(getValue(huaToken.name()), token);
+        }
+        //endregion
+
+        //region 处理 Headers
+        HuaHeader methodHeader = method.getAnnotation(HuaHeader.class);
+        if (methodHeader != null) {
+            String[] names = methodHeader.names();
+            String[] values = methodHeader.values();
+            if (names.length != values.length) {
+                throw new InvalidParameterException("Header names 与 values 长度不匹配。");
+            }
+            for (int i = 0; i < names.length; ++i) {
+                headers.put(getValue(names[i]), getValue(values[i]));
+            }
+        }
+        //endregion
+
+        //region 处理 Params
+        HuaParam methodParam = method.getAnnotation(HuaParam.class);
+        if (methodParam != null) {
+            String[] names = methodParam.names();
+            String[] values = methodParam.values();
+            if (names.length != values.length) {
+                throw new InvalidParameterException("Param names 与 values 长度不匹配。");
+            }
+            for (int i = 0; i < names.length; ++i) {
+                params.put(getValue(names[i]), getValue(values[i]));
+            }
+        }
+        //endregion
+
+        //region 处理 Bodies
+        HuaBody methodBody = method.getAnnotation(HuaBody.class);
+        if (methodBody != null) {
+            String[] names = methodBody.names();
+            String[] values = methodBody.values();
+            if (names.length != values.length) {
+                throw new InvalidParameterException("Body names 与 values 长度不匹配。");
+            }
+            for (int i = 0; i < names.length; ++i) {
+                bodies.put(getValue(names[i]), getValue(values[i]));
+            }
+        }
+        //endregion
+
+        //region 处理 Paths
+        HuaPath methodPath = method.getAnnotation(HuaPath.class);
+        if (methodPath != null) {
+            String[] names = methodPath.names();
+            String[] values = methodPath.values();
+            if (names.length != values.length) {
+                throw new InvalidParameterException("Path names 与 values 长度不匹配。");
+            }
+            for (int i = 0; i < names.length; ++i) {
+                //region 处理地址路径转换
+                fullUrl = fullUrl.replaceAll("\\{" + getValue(names[i]) + "}", getValue(values[i]));
+                //endregion
+            }
+        }
         //endregion
 
         //region 处理参数
-
-        HashMap<String, String> params = new HashMap<>();
-        HashMap<String, Object> bodies = new HashMap<>();
 
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
@@ -190,6 +214,7 @@ public class HttpHandler implements InvocationHandler {
 
         //endregion
 
+        //region 处理返回值
         String result = HttpTool.reqJson(fullUrl, methodName, params, bodies, headers);
         Class<?> returnType = method.getReturnType();
         switch (returnType.getTypeName()) {
@@ -206,8 +231,8 @@ public class HttpHandler implements InvocationHandler {
             case "java.lang.Boolean":
                 return Boolean.parseBoolean(result);
         }
-
         Gson gson = new Gson();
         return gson.fromJson(result, returnType);
+        //endregion
     }
 }
