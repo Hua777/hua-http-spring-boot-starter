@@ -8,8 +8,36 @@
     <artifactId>hua-http-spring-boot-starter</artifactId>
     <version>1.0.0-RELEASE</version>
 
-    <name>http-spring-boot-starter</name>
+    <name>hua-http-spring-boot-starter</name>
     <url>https://github.com/Hua777</url>
+
+    <repositories>
+        <repository>
+            <id>ae-public</id>
+            <name>ae-public</name>
+            <url>https://maven.bwae.org/repository/ae-public/</url>
+            <layout>default</layout>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>ae-public</id>
+            <name>Nexus Release Repository</name>
+            <url>https://maven.bwae.org/repository/ae-iot-release/</url>
+        </repository>
+        <snapshotRepository>
+            <id>ae-public</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>https://maven.bwae.org/repository/ae-iot-snapshot/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
