@@ -8,15 +8,17 @@ hua-http-spring-boot-starter
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.0-RELEASE</version>
+    <version>1.0.1-RELEASE</version>
 </dependency>
 ```
 
-## Annotations
+## 注解
 
 ```java
 // TYPE
 @HuaHttp
+@HuaToken
+@HuaHeader
 
 // METHOD
 @HuaGet
@@ -24,6 +26,7 @@ hua-http-spring-boot-starter
 @HuaPut
 @HuaDelete
 @HuaToken
+@HuaHeader
 
 // PARAMETER
 @HuaParam
@@ -32,41 +35,100 @@ hua-http-spring-boot-starter
 @HuaPath
 ```
 
-## 范例
+## 配置扫描包
 
 ```yaml
 hua777:
   spring-boot-starter:
     http:
-      scan-packages: xxx.xxx.xxx
+      scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
 ```
 
-```java
-pacakge xxx.xxx.xxx
+## 教程
 
-@HuaHttp(url = "${test.url}")
+### 基础使用
+
+```java
+@HuaHttp("http://hello-world.com")
 public interface TestHttp {
-    @HuaHeader(
-        names = {"key1", "key2"},
-        values = {"value1", "value2"}
-    )
-    @HuaGet(url = "/test/{hey}")
-    String test(
-        String arg0001, 
-        @HuaBody(name = "arg0002_change", method = "toString") String arg0002, 
-        @HuaHeader String arg0003, 
-        @HuaPath String hey
-    );
+
+    /*
+     * http get http://hello-world.com/get/hello/world?hello=xxx
+     */
+    @HuaGet(url = "/get/hello/world")
+    String getHelloWorld(String hello);
+    
+    /*
+     * http post http://hello-world.com/post/hello/world
+     * body = {
+     *     "hello": "xxx"
+     * }
+     */
+    @HuaPost(url = "/post/hello/world")
+    String postHelloWorld(String hello); // default is body
+
+    /*
+     * http post http://hello-world.com/post/hello/world?world=xxx
+     * body = {
+     *     "hello": "xxx"
+     * }
+     */
+    @HuaPost(url = "/post/hello/world")
+    String postHelloWorldButUseParam(String hello, @HuaParam String world);
+    
+    /*
+     * http get http://hello-world.com/get/hello/world/xxx
+     */
+    @HuaGet(url = "/get/hello/world/{path}")
+    String testPath(@HuaPath String path);
 }
 ```
 
-```java
-@Autowired
-TestHttp httpTest;
+### Header 赋值
 
-httpTest.test("", "", "", "");
+```java
+@HuaHeader(names = {"big_token1"}, values = {"big_value1"})
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world
+     * headers {
+     *     "big_token1": "big_value1",
+     *     "token1": "value1",
+     *     "InputToken": "xxx"
+     * }
+     */
+    @HuaGet(url = "/get/hello/world")
+    @HuaHeader(names = {"token1"}, values = {"value1"})
+    String testHeader(@HuaHeader(name = "InputToken") String token);
+}
 ```
 
-## GitHub
+### Token 使用
 
-https://github.com/Hua777/hua-http-spring-boot-starter
+```java
+@HuaToken(name = "name1", key = "key1", iss = "iss1", sub = "sub1")
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world
+     * headers {
+     *     "name1": "token1"
+     * }
+     */
+    @HuaGet(url = "/get/hello/world")
+    String testToken1();
+
+    /*
+     * http get http://hello-world.com/get/hello/world
+     * headers {
+     *     "name2": "token2"
+     * }
+     */
+    @HuaGet(url = "/get/hello/world")
+    @HuaToken(name = "name2", key = "key2", iss = "iss2", sub = "sub2")
+    String testToken2();
+}
+```

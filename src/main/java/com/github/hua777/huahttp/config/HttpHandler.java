@@ -94,7 +94,10 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Token
-        HuaToken huaToken = method.getAnnotation(HuaToken.class);
+        HuaToken huaToken = interfaceClass.getAnnotation(HuaToken.class);
+        if (huaToken == null) {
+            huaToken = method.getAnnotation(HuaToken.class);
+        }
         if (huaToken != null) {
             String key = getValue(huaToken.key());
             String iss = getValue(huaToken.iss());
@@ -107,6 +110,18 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Headers
+        HuaHeader typeHeader = interfaceClass.getAnnotation(HuaHeader.class);
+        if (typeHeader != null) {
+            String[] names = typeHeader.names();
+            String[] values = typeHeader.values();
+            if (names.length != values.length) {
+                throw new InvalidParameterException("Header names 与 values 长度不匹配。");
+            }
+            for (int i = 0; i < names.length; ++i) {
+                headers.put(getValue(names[i]), getValue(values[i]));
+            }
+        }
+
         HuaHeader methodHeader = method.getAnnotation(HuaHeader.class);
         if (methodHeader != null) {
             String[] names = methodHeader.names();
