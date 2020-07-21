@@ -2,9 +2,9 @@ package com.github.hua777.huahttp.annotation.method;
 
 import java.lang.annotation.*;
 
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
 public @interface HuaToken {
     String name();
 

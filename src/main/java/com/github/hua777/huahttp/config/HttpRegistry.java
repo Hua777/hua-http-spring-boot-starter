@@ -27,7 +27,7 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, Applic
     public void postProcessBeanDefinitionRegistry(@NotNull BeanDefinitionRegistry registry) throws BeansException {
         HttpScanner scanner = new HttpScanner(env, registry);
         scanner.setResourceLoader(applicationContext);
-        scanner.doScan(env.getProperty("hua777.spring-boot-starter.http.scan-packages", "*").split(","));
+        scanner.doScan(env.getProperty("com.github.hua777.hua-http-spring-boot-starter.scan-packages", "*").split(","));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.github.hua777.huahttp.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -28,14 +29,14 @@ public class HttpFactory<T> implements FactoryBean<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T getObject() {
+    public @NotNull T getObject() {
         return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
         }, httpHandler);
     }
 
     @Override
-    public Class<T> getObjectType() {
+    public @NotNull Class<T> getObjectType() {
         return interfaceClass;
     }
 

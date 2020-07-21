@@ -1,5 +1,6 @@
 package com.github.hua777.huahttp.tool;
 
+import com.github.hua777.huahttp.annotation.enumrate.TransportType;
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -11,20 +12,21 @@ import java.util.Map;
 
 public class HttpTool {
 
-    public static String reqJson(
+    private static String req(
             String url,
             String method,
             HashMap<String, String> params,
-            HashMap<String, Object> datas,
-            HashMap<String, String> headers
+            String bodies,
+            HashMap<String, String> headers,
+            TransportType contentType,
+            TransportType acceptType
     ) throws IOException {
-        Gson gson = new Gson();
         StringBuilder result = new StringBuilder();
         URL realUrl = new URL(MapTool.concatQueryString(url, MapTool.toUrlQueryString(params)));
         HttpURLConnection connection = (HttpURLConnection) realUrl.openConnection();
         connection.setRequestProperty("connection", "Keep-Alive");
-        connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        connection.setRequestProperty("Accept", "application/json; charset=UTF-8");
+        connection.setRequestProperty("Content-Type", contentType.string);
+        connection.setRequestProperty("Accept", acceptType.string);
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 connection.setRequestProperty(entry.getKey(), entry.getValue());
@@ -32,12 +34,12 @@ public class HttpTool {
         }
         connection.setRequestMethod(method.toUpperCase());
         if ("POST".equals(method.toUpperCase()) || "PUT".equals(method.toUpperCase())) {
-            if (datas != null) {
+            if (bodies != null) {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setUseCaches(false);
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8));
-                writer.write(gson.toJson(datas));
+                writer.write(bodies);
                 writer.flush();
                 writer.close();
             }
@@ -49,6 +51,43 @@ public class HttpTool {
         }
         in.close();
         return result.toString();
+    }
+
+    public static String req(
+            String url,
+            String method,
+            HashMap<String, String> params,
+            HashMap<String, Object> bodies,
+            HashMap<String, String> headers
+    ) throws IOException {
+        Gson gson = new Gson();
+        return req(
+                url,
+                method,
+                params,
+                (bodies == null ? null : gson.toJson(bodies)),
+                headers,
+                TransportType.AppJson,
+                TransportType.AppJson
+        );
+    }
+
+    public static String req(
+            String url,
+            String method,
+            HashMap<String, String> params,
+            String bodies,
+            HashMap<String, String> headers
+    ) throws IOException {
+        return req(
+                url,
+                method,
+                params,
+                bodies,
+                headers,
+                TransportType.AppXWWWFormUrlencoded,
+                TransportType.AppJson
+        );
     }
 
 }

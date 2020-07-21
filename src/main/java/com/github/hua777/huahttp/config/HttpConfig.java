@@ -10,7 +10,7 @@ public class HttpConfig {
 
     @Bean
     @ConditionalOnMissingBean(HttpRegistry.class)
-    public static HttpRegistry openAPIRegistry(Environment env) {
+    public static HttpRegistry httpRegistry(Environment env) {
         return new HttpRegistry(env);
     }
 

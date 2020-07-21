@@ -44,13 +44,13 @@ hua777:
 ```java
 pacakge xxx.xxx.xxx
 
-@HuaHttp("${test.url}")
+@HuaHttp(url = "${test.url}")
 public interface TestHttp {
     @HuaHeader(
         names = {"key1", "key2"},
         values = {"value1", "value2"}
     )
-    @HuaGet("/test/{hey}")
+    @HuaGet(url = "/test/{hey}")
     String test(
         String arg0001, 
         @HuaBody(name = "arg0002_change", method = "toString") String arg0002, 
