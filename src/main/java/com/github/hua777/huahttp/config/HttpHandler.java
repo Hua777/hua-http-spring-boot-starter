@@ -1,5 +1,7 @@
 package com.github.hua777.huahttp.config;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpUtil;
 import com.github.hua777.huahttp.annotation.HuaHttp;
 import com.github.hua777.huahttp.annotation.enumrate.HttpMethod;
 import com.github.hua777.huahttp.annotation.method.*;
@@ -7,7 +9,6 @@ import com.github.hua777.huahttp.annotation.param.HuaBody;
 import com.github.hua777.huahttp.annotation.param.HuaHeader;
 import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
-import com.github.hua777.huahttp.tool.HttpTool;
 import com.github.hua777.huahttp.tool.TokenTool;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,13 +52,21 @@ public class HttpHandler implements InvocationHandler {
         HttpMethod httpMethod = HttpMethod.Get;
 
         HashMap<String, String> headers = new HashMap<>();
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         HashMap<String, Object> bodies = new HashMap<>();
         HashMap<String, String> paths = new HashMap<>();
 
         String baseUrl = "";
         String subUrl = "";
         String fullUrl;
+
+        //region 检查是否为表单类型
+        boolean isForm = false;
+        HuaForm huaForm = method.getAnnotation(HuaForm.class);
+        if (huaForm != null) {
+            isForm = huaForm.value();
+        }
+        //endregion
 
         //region 处理地址与请求方法
         HuaHttp huaHttp = interfaceClass.getAnnotation(HuaHttp.class);
@@ -241,15 +251,46 @@ public class HttpHandler implements InvocationHandler {
         Gson gson = new Gson();
 
         log.debug("============ Hua-Http Invoke Debug Start ============");
-        log.debug("Full Url: {}", fullUrl);
-        log.debug("Http Type: {}", httpMethod.name());
-        log.debug("Params: {}", gson.toJson(params));
-        log.debug("Bodies: {}", gson.toJson(bodies));
-        log.debug("Headers: {}", gson.toJson(headers));
+        log.debug("Full Url: {}, Http Type: {}, Params: {}, Bodies: {}, Headers: {}",
+                fullUrl,
+                httpMethod.name(),
+                gson.toJson(params),
+                gson.toJson(bodies),
+                gson.toJson(headers)
+        );
         log.debug("======================================================");
 
         //region 处理返回值
-        String result = HttpTool.req(fullUrl, httpMethod.name(), params, bodies, headers);
+        fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
+        HttpRequest req = null;
+        switch (httpMethod) {
+            case Get:
+                req = HttpRequest.get(fullUrl);
+                break;
+            case Post:
+                if (isForm) {
+                    req = HttpRequest.post(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
+                } else {
+                    req = HttpRequest.post(fullUrl).body(gson.toJson(bodies));
+                }
+                break;
+            case Put:
+                if (isForm) {
+                    req = HttpRequest.put(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
+                } else {
+                    req = HttpRequest.put(fullUrl).body(gson.toJson(bodies));
+                }
+                break;
+            case Delete:
+                req = HttpRequest.delete(fullUrl);
+                break;
+        }
+        String result = req.addHeaders(headers).setFollowRedirects(true).execute().body();
+
+        log.debug("============ Hua-Http Invoke Debug End ============");
+        log.debug("Return String: {}", result);
+        log.debug("====================================================");
+
         Class<?> returnType = method.getReturnType();
         switch (returnType.getTypeName()) {
             case "void":
@@ -265,7 +306,7 @@ public class HttpHandler implements InvocationHandler {
             case "java.lang.Boolean":
                 return Boolean.parseBoolean(result);
         }
-        return gson.fromJson(result, returnType);
+        return gson.fromJson(result, method.getGenericReturnType());
         //endregion
     }
 }

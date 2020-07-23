@@ -8,7 +8,7 @@ hua-http-spring-boot-starter
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.1-RELEASE</version>
+    <version>1.0.2-RELEASE</version>
 </dependency>
 ```
 
@@ -27,6 +27,7 @@ hua-http-spring-boot-starter
 @HuaDelete
 @HuaToken
 @HuaHeader
+@HuaForm
 
 // PARAMETER
 @HuaParam
