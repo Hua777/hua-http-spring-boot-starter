@@ -43,10 +43,11 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 ## 配置扫描包
 
 ```yaml
-hua777:
-  spring-boot-starter:
-    http:
-      scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
+com:
+  github:
+    hua777:
+      hua-http-spring-boot-starter:
+        scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
 ```
 
 ## 教程
