@@ -1,5 +1,6 @@
 package com.github.hua777.huahttp.config;
 
+import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,20 +20,32 @@ public class HttpFactory<T> implements FactoryBean<T> {
     Class<T> interfaceClass;
 
     Environment env;
-
-    HttpHandler httpHandler;
+    HttpProperty httpProperty;
+    HttpHandlerConfig httpHandlerConfig;
 
     public void setEnv(Environment env) {
         this.env = env;
-        httpHandler = new HttpHandler(env, interfaceClass);
+    }
+
+    public void setHttpProperty(HttpProperty httpProperty) {
+        this.httpProperty = httpProperty;
+    }
+
+    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
+        this.httpHandlerConfig = httpHandlerConfig;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull T getObject() {
+        log.info("生产 Bean {}", interfaceClass.getName());
         return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
-        }, httpHandler);
+        }, new HttpHandler()
+                .setEnv(env)
+                .setHttpProperty(httpProperty)
+                .setHttpHandlerConfig(httpHandlerConfig)
+                .setInterfaceClass(interfaceClass));
     }
 
     @Override

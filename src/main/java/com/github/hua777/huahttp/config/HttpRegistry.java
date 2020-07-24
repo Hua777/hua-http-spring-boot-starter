@@ -1,6 +1,9 @@
 package com.github.hua777.huahttp.config;
 
+import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -11,12 +14,25 @@ import org.springframework.core.env.Environment;
 
 public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
-    public HttpRegistry(Environment env) {
+    static Logger log = LoggerFactory.getLogger(HttpRegistry.class);
+
+    ApplicationContext applicationContext;
+
+    Environment env;
+    HttpProperty httpProperty;
+    HttpHandlerConfig httpHandlerConfig;
+
+    public void setEnv(Environment env) {
         this.env = env;
     }
 
-    Environment env;
-    ApplicationContext applicationContext;
+    public void setHttpProperty(HttpProperty httpProperty) {
+        this.httpProperty = httpProperty;
+    }
+
+    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
+        this.httpHandlerConfig = httpHandlerConfig;
+    }
 
     @Override
     public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException {
@@ -25,9 +41,12 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, Applic
 
     @Override
     public void postProcessBeanDefinitionRegistry(@NotNull BeanDefinitionRegistry registry) throws BeansException {
-        HttpScanner scanner = new HttpScanner(env, registry);
+        HttpScanner scanner = new HttpScanner(registry);
+        scanner.setEnv(env);
+        scanner.setHttpProperty(httpProperty);
+        scanner.setHttpHandlerConfig(httpHandlerConfig);
         scanner.setResourceLoader(applicationContext);
-        scanner.doScan(env.getProperty("com.github.hua777.hua-http-spring-boot-starter.scan-packages", "*").split(","));
+        scanner.doScan(httpProperty.getScanPackages().split(","));
     }
 
     @Override

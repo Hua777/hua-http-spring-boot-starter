@@ -12,7 +12,7 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.2-RELEASE</version>
+    <version>1.0.3-RELEASE</version>
 </dependency>
 ```
 
@@ -23,6 +23,7 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 @HuaHttp
 @HuaToken
 @HuaHeader
+@HuaAop
 
 // METHOD
 @HuaGet
@@ -32,6 +33,7 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 @HuaToken
 @HuaHeader
 @HuaForm
+@HuaAop
 
 // PARAMETER
 @HuaParam
@@ -138,3 +140,102 @@ public interface TestHttp {
     String testToken2();
 }
 ```
+
+### AOP 使用
+
+注册预设方法
+
+```java
+@Configuration
+public class MyHttpHandlerConfig implements HttpHandlerConfig {
+    @Override
+    public HttpHandlerSetting getSetting() {
+        HttpHandlerSetting setting = new HttpHandlerSetting();
+        setting.defaultMethod(new HttpHandlerMethod<YourBean>() {
+            @Override
+            public Object[] start(Method method, Object[] args) {
+                return args;
+            }
+
+            @Override
+            public void beforeHttpMethod(String fullUrl, HttpMethod httpMethod, Map<String, Object> bodies, Map<String, String> headers) {
+
+            }
+
+            @Override
+            public void afterHttpMethod(HttpResponse result) {
+
+            }
+
+            @Override
+            public YourBean end(Method method, YourBean result) {
+                return result;
+            }
+        });
+        return setting;
+    }
+}
+```
+
+```java
+@HuaAop
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world?hello=xxx
+     */
+    @HuaAop
+    @HuaGet(url = "/get/hello/world")
+    String getHelloWorld(String hello);
+}
+```
+
+注册变量方法
+
+```java
+@Configuration
+public class MyHttpHandlerConfig implements HttpHandlerConfig {
+    @Override
+    public HttpHandlerSetting getSetting() {
+        HttpHandlerSetting setting = new HttpHandlerSetting();
+        setting.addMethod("pleaseTagMe", new HttpHandlerMethod<YourBean>() {
+            @Override
+            public Object[] start(Method method, Object[] args) {
+                return args;
+            }
+
+            @Override
+            public void beforeHttpMethod(String fullUrl, HttpMethod httpMethod, Map<String, Object> bodies, Map<String, String> headers) {
+
+            }
+
+            @Override
+            public void afterHttpMethod(HttpResponse result) {
+
+            }
+
+            @Override
+            public YourBean end(Method method, YourBean result) {
+                return result;
+            }
+        });
+        return setting;
+    }
+}
+```
+
+```java
+@HuaAop("pleaseTagMe")
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world?hello=xxx
+     */
+    @HuaAop("pleaseTagMe")
+    @HuaGet(url = "/get/hello/world")
+    String getHelloWorld(String hello);
+}
+```
+

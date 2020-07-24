@@ -1,7 +1,9 @@
 package com.github.hua777.huahttp.config;
 
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
+import com.github.hua777.huahttp.annotation.HuaAop;
 import com.github.hua777.huahttp.annotation.HuaHttp;
 import com.github.hua777.huahttp.annotation.enumrate.HttpMethod;
 import com.github.hua777.huahttp.annotation.method.*;
@@ -9,6 +11,8 @@ import com.github.hua777.huahttp.annotation.param.HuaBody;
 import com.github.hua777.huahttp.annotation.param.HuaHeader;
 import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
+import com.github.hua777.huahttp.bean.HttpHandlerMethod;
+import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.TokenTool;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
@@ -28,13 +32,33 @@ public class HttpHandler implements InvocationHandler {
 
     static Logger log = LoggerFactory.getLogger(HttpHandler.class);
 
-    Environment env;
-
     Class<?> interfaceClass;
 
-    public HttpHandler(Environment env, Class<?> interfaceClass) {
-        this.env = env;
+    Environment env;
+    HttpProperty httpProperty;
+    HttpHandlerConfig httpHandlerConfig;
+
+    public HttpHandler() {
+    }
+
+    public HttpHandler setInterfaceClass(Class<?> interfaceClass) {
         this.interfaceClass = interfaceClass;
+        return this;
+    }
+
+    public HttpHandler setEnv(Environment env) {
+        this.env = env;
+        return this;
+    }
+
+    public HttpHandler setHttpProperty(HttpProperty httpProperty) {
+        this.httpProperty = httpProperty;
+        return this;
+    }
+
+    public HttpHandler setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
+        this.httpHandlerConfig = httpHandlerConfig;
+        return this;
     }
 
     private String getValue(String key) {
@@ -46,6 +70,7 @@ public class HttpHandler implements InvocationHandler {
         return key;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
 
@@ -59,6 +84,27 @@ public class HttpHandler implements InvocationHandler {
         String baseUrl = "";
         String subUrl = "";
         String fullUrl;
+
+        //region 获取切片方法
+        HttpHandlerMethod<Object> aopMethod = null;
+        if (httpHandlerConfig != null) {
+            HuaAop huaAop = interfaceClass.getAnnotation(HuaAop.class);
+            if (huaAop == null) {
+                huaAop = method.getAnnotation(HuaAop.class);
+            }
+            if (huaAop != null) {
+                String methodName = getValue(huaAop.value());
+                aopMethod = httpHandlerConfig.getSetting().getMethod(methodName);
+                if (aopMethod == null) {
+                    log.debug("无法从配置文件中找到 {} 函数", methodName);
+                }
+            }
+        }
+        //endregion
+
+        if (aopMethod != null) {
+            args = aopMethod.start(method, args);
+        }
 
         //region 检查是否为表单类型
         boolean isForm = false;
@@ -244,7 +290,7 @@ public class HttpHandler implements InvocationHandler {
 
         //region 处理 Paths
         for (Map.Entry<String, String> entry : paths.entrySet()) {
-            fullUrl = fullUrl.replaceAll("\\{" + entry.getKey() + "\\}", entry.getValue());
+            fullUrl = fullUrl.replace("{" + entry.getKey() + "}", entry.getValue());
         }
         //endregion
 
@@ -262,6 +308,11 @@ public class HttpHandler implements InvocationHandler {
 
         //region 处理返回值
         fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
+
+        if (aopMethod != null) {
+            aopMethod.beforeHttpMethod(fullUrl, httpMethod, bodies, headers);
+        }
+
         HttpRequest req = null;
         switch (httpMethod) {
             case Get:
@@ -285,10 +336,16 @@ public class HttpHandler implements InvocationHandler {
                 req = HttpRequest.delete(fullUrl);
                 break;
         }
-        String result = req.addHeaders(headers).setFollowRedirects(true).execute().body();
+        HttpResponse response = req.addHeaders(headers).setFollowRedirects(true).execute();
+
+        if (aopMethod != null) {
+            aopMethod.afterHttpMethod(response);
+        }
+
+        String resultString = response.body();
 
         log.debug("============ Hua-Http Invoke Debug End ============");
-        log.debug("Return String: {}", result);
+        log.debug("Return String: {}", resultString);
         log.debug("====================================================");
 
         Class<?> returnType = method.getReturnType();
@@ -296,17 +353,24 @@ public class HttpHandler implements InvocationHandler {
             case "void":
                 return null;
             case "java.lang.String":
-                return result;
+                return resultString;
             case "java.lang.Integer":
-                return Integer.parseInt(result);
+                return Integer.parseInt(resultString);
             case "java.lang.Float":
-                return Float.parseFloat(result);
+                return Float.parseFloat(resultString);
             case "java.lang.Double":
-                return Double.parseDouble(result);
+                return Double.parseDouble(resultString);
             case "java.lang.Boolean":
-                return Boolean.parseBoolean(result);
+                return Boolean.parseBoolean(resultString);
         }
-        return gson.fromJson(result, method.getGenericReturnType());
+
+        Object resultObject = gson.fromJson(resultString, method.getGenericReturnType());
         //endregion
+
+        if (aopMethod != null) {
+            resultObject = aopMethod.end(method, resultObject);
+        }
+
+        return resultObject;
     }
 }

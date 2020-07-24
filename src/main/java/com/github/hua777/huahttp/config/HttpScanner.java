@@ -1,6 +1,7 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.annotation.HuaHttp;
+import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,23 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
     static Logger log = LoggerFactory.getLogger(HttpScanner.class);
 
     Environment env;
+    HttpProperty httpProperty;
+    HttpHandlerConfig httpHandlerConfig;
 
-    public HttpScanner(Environment env, BeanDefinitionRegistry registry) {
+    public HttpScanner(BeanDefinitionRegistry registry) {
         super(registry);
+    }
+
+    public void setEnv(Environment env) {
         this.env = env;
+    }
+
+    public void setHttpProperty(HttpProperty httpProperty) {
+        this.httpProperty = httpProperty;
+    }
+
+    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
+        this.httpHandlerConfig = httpHandlerConfig;
     }
 
     @Override
@@ -33,6 +47,7 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
 
     @Override
     public @NotNull Set<BeanDefinitionHolder> doScan(String @NotNull ... basePackages) {
+        log.info("HuaHttp 扫描路径（{}）下的 @HuaHttp", String.join(",", basePackages));
         Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
         for (BeanDefinitionHolder beanDefinition : beanDefinitions) {
             GenericBeanDefinition definition = (GenericBeanDefinition) beanDefinition.getBeanDefinition();
@@ -40,6 +55,8 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
             definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
             definition.setBeanClass(HttpFactory.class);
             definition.getPropertyValues().add("env", env);
+            definition.getPropertyValues().add("httpProperty", httpProperty);
+            definition.getPropertyValues().add("httpHandlerConfig", httpHandlerConfig);
         }
         return beanDefinitions;
     }
