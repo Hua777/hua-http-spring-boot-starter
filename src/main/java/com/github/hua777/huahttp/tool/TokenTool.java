@@ -12,13 +12,13 @@ import java.util.Date;
 public class TokenTool {
 
     /**
-     * HMAC256 算法生成 JSON Web Token
-     *
-     * @param key              算法密码
-     * @param iss              发行人
-     * @param sub              主题
-     * @param validityPeriodMs 有效持续时间
+     * @param key                     算法密码
+     * @param iss                     发行人
+     * @param sub                     主题
+     * @param issuedAtTimeThresholdMs 微调 Token 开始时间
+     * @param validityPeriodMs        有效持续时间
      * @return Token
+     * @throws UnsupportedEncodingException 兼容低版本
      */
     public static String createJWTByHMAC256(String key, String iss, String sub, long issuedAtTimeThresholdMs, long validityPeriodMs) throws UnsupportedEncodingException {
         String token = "";
@@ -44,6 +44,7 @@ public class TokenTool {
      * @param sub   主题
      * @param token Token
      * @return 解析结果
+     * @throws UnsupportedEncodingException 兼容低版本
      */
     public static DecodedJWT verifierJWTByHMAC256(String key, String iss, String sub, String token) throws JWTVerificationException, UnsupportedEncodingException {
         Algorithm algorithm = Algorithm.HMAC256(key);

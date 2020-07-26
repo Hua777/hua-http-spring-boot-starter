@@ -2,7 +2,6 @@ package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.PropertyTool;
-import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

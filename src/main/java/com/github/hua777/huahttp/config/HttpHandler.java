@@ -348,21 +348,7 @@ public class HttpHandler implements InvocationHandler {
         log.debug("Return String: {}", resultString);
         log.debug("====================================================");
 
-        Class<?> returnType = method.getReturnType();
-        switch (returnType.getTypeName()) {
-            case "void":
-                return null;
-            case "java.lang.String":
-                return resultString;
-            case "java.lang.Integer":
-                return Integer.parseInt(resultString);
-            case "java.lang.Float":
-                return Float.parseFloat(resultString);
-            case "java.lang.Double":
-                return Double.parseDouble(resultString);
-            case "java.lang.Boolean":
-                return Boolean.parseBoolean(resultString);
-        }
+        if (method.getReturnType().getTypeName().equals("void")) return null;
 
         Object resultObject = gson.fromJson(resultString, method.getGenericReturnType());
         //endregion

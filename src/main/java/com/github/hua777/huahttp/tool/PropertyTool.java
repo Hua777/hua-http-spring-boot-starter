@@ -70,7 +70,11 @@ public class PropertyTool {
         if (propertySource instanceof EnumerablePropertySource<?>) {
             EnumerablePropertySource<?> ps = (EnumerablePropertySource<?>) propertySource;
             Arrays.asList(ps.getPropertyNames()).forEach(key -> {
-                result.put(key, environment.getProperty(key));
+                try {
+                    result.put(key, environment.getProperty(key));
+                } catch (Exception ex) {
+                    log.error("获取环境配置错误：Key={}", key);
+                }
             });
             return result;
         }

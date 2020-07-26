@@ -12,9 +12,11 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.3-RELEASE</version>
+    <version>1.0.4-RELEASE</version>
 </dependency>
 ```
+
+备注：还没上传
 
 ## 注解
 
@@ -239,3 +241,40 @@ public interface TestHttp {
 }
 ```
 
+## 这里使用到的依赖
+
+### hutool-all
+
+用于请求 Http [Hutool](https://github.com/looly/hutool)
+
+```xml
+<dependency>
+    <groupId>cn.hutool</groupId>
+    <artifactId>hutool-all</artifactId>
+    <version>5.3.8</version>
+</dependency>
+```
+
+### gson
+
+用于解析请求返回 Json [Gson](https://github.com/google/gson)
+
+```xml
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.8.6</version>
+</dependency>
+```
+
+### java-jwt
+
+用于请求头加上 Token [java-jwt](https://github.com/auth0/java-jwt)
+
+```xml
+<dependency>
+    <groupId>com.auth0</groupId>
+    <artifactId>java-jwt</artifactId>
+    <version>3.10.3</version>
+</dependency>
+```
