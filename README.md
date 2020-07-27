@@ -12,11 +12,9 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.4-RELEASE</version>
+    <version>1.0.3.fix-RELEASE</version>
 </dependency>
 ```
-
-备注：还没上传
 
 ## 注解
 
