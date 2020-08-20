@@ -1,12 +1,12 @@
-# 快速的请求 HTTP
+# SpringBoot 接口式註解，快速開發 HTTP 請求函數
 
 hua-http-spring-boot-starter
 
-## :pencil2: 恳求
+## :pencil2: 嗨
 
-SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:。
+SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 
-## 引用
+## POM 引入
 
 ```xml
 <dependency>
@@ -16,7 +16,7 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 </dependency>
 ```
 
-## 注解
+## 註解
 
 ```java
 // TYPE
@@ -42,7 +42,7 @@ SpringBoot 小白的我，欢迎大家发 Issues、Fork、Pull Requests :smile:�
 @HuaPath
 ```
 
-## 配置扫描包
+## 配置文件設置掃描路徑
 
 ```yaml
 com:
@@ -52,9 +52,9 @@ com:
         scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
 ```
 
-## 教程
+## 教學
 
-### 基础使用
+### 基礎使用
 
 ```java
 @HuaHttp("http://hello-world.com")
@@ -92,7 +92,7 @@ public interface TestHttp {
 }
 ```
 
-### Header 赋值
+### 請求時帶上 Header
 
 ```java
 @HuaHeader(names = {"big_token1"}, values = {"big_value1"})
@@ -113,7 +113,7 @@ public interface TestHttp {
 }
 ```
 
-### Token 使用
+### 請求時使用 Token
 
 ```java
 @HuaToken(name = "name1", key = "key1", iss = "iss1", sub = "sub1")
@@ -141,9 +141,9 @@ public interface TestHttp {
 }
 ```
 
-### AOP 使用
+### 自定義請求上下文
 
-注册预设方法
+註冊預設配置
 
 ```java
 @Configuration
@@ -191,7 +191,7 @@ public interface TestHttp {
 }
 ```
 
-注册变量方法
+註冊自定義名稱配置
 
 ```java
 @Configuration
@@ -225,6 +225,8 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
 }
 ```
 
+使用自定義名稱配置
+
 ```java
 @HuaAop("pleaseTagMe")
 @HuaHttp("http://hello-world.com")
@@ -239,11 +241,11 @@ public interface TestHttp {
 }
 ```
 
-## 这里使用到的依赖
+## 這個項目使用的依賴包
 
 ### hutool-all
 
-用于请求 Http [Hutool](https://github.com/looly/hutool)
+用於請求 Http [Hutool](https://github.com/looly/hutool)
 
 ```xml
 <dependency>
@@ -255,7 +257,7 @@ public interface TestHttp {
 
 ### gson
 
-用于解析请求返回 Json [Gson](https://github.com/google/gson)
+用於解析請求返回值 Json [Gson](https://github.com/google/gson)
 
 ```xml
 <dependency>
@@ -267,7 +269,7 @@ public interface TestHttp {
 
 ### java-jwt
 
-用于请求头加上 Token [java-jwt](https://github.com/auth0/java-jwt)
+用於請求頭加上 Token [java-jwt](https://github.com/auth0/java-jwt)
 
 ```xml
 <dependency>
