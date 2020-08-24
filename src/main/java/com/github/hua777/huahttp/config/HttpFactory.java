@@ -38,7 +38,7 @@ public class HttpFactory<T> implements FactoryBean<T> {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull T getObject() {
-        log.info("生产 Bean {}", interfaceClass.getName());
+        log.info("HuaHttp 为您生产 Bean {}", interfaceClass.getName());
         return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
         }, new HttpHandler()

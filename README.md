@@ -12,7 +12,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.3.fix-RELEASE</version>
+    <version>1.0.4-RELEASE</version>
 </dependency>
 ```
 
@@ -278,3 +278,4 @@ public interface TestHttp {
     <version>3.10.3</version>
 </dependency>
 ```
+
