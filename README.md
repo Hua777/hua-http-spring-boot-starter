@@ -12,7 +12,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.4-RELEASE</version>
+    <version>1.0.5-RELEASE</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 @HuaPath
 ```
 
-## 配置文件設置掃描路徑
+## 配置文件設置掃描路徑（可選，默認掃描啟動類下所有包）
 
 ```yaml
 com:

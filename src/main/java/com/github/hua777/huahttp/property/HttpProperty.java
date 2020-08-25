@@ -10,6 +10,6 @@ public class HttpProperty {
         this.scanPackages = scanPackages;
     }
 
-    String scanPackages = "*";
+    String scanPackages;
 
 }

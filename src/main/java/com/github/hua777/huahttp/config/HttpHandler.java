@@ -34,7 +34,7 @@ public class HttpHandler implements InvocationHandler {
 
     Class<?> interfaceClass;
 
-    Environment env;
+    Environment environment;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
 
@@ -46,8 +46,8 @@ public class HttpHandler implements InvocationHandler {
         return this;
     }
 
-    public HttpHandler setEnv(Environment env) {
-        this.env = env;
+    public HttpHandler setEnvironment(Environment environment) {
+        this.environment = environment;
         return this;
     }
 
@@ -65,7 +65,7 @@ public class HttpHandler implements InvocationHandler {
         if (key.startsWith("${") && key.endsWith("}")) {
             key = key.substring(2);
             key = key.substring(0, key.length() - 1);
-            return env.getProperty(key);
+            return environment.getProperty(key);
         }
         return key;
     }

@@ -10,7 +10,6 @@ import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
-import org.springframework.core.env.Environment;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.util.Set;
@@ -19,16 +18,11 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
 
     static Logger log = LoggerFactory.getLogger(HttpScanner.class);
 
-    Environment env;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
 
     public HttpScanner(BeanDefinitionRegistry registry) {
         super(registry);
-    }
-
-    public void setEnv(Environment env) {
-        this.env = env;
     }
 
     public void setHttpProperty(HttpProperty httpProperty) {
@@ -54,7 +48,7 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
             definition.getConstructorArgumentValues().addGenericArgumentValue(definition.getBeanClassName());
             definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
             definition.setBeanClass(HttpFactory.class);
-            definition.getPropertyValues().add("env", env);
+            definition.getPropertyValues().add("environment", getEnvironment());
             definition.getPropertyValues().add("httpProperty", httpProperty);
             definition.getPropertyValues().add("httpHandlerConfig", httpHandlerConfig);
         }

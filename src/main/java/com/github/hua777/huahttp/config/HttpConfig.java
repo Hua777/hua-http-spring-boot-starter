@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
 
 @Configuration
 public class HttpConfig {
@@ -24,12 +23,11 @@ public class HttpConfig {
 
     @Bean
     @ConditionalOnMissingBean(HttpRegistry.class)
-    public HttpRegistry httpRegistry(Environment env, HttpProperty httpProperty, @Autowired(required = false) HttpHandlerConfig httpHandlerConfig) {
+    public HttpRegistry httpRegistry(HttpProperty httpProperty, @Autowired(required = false) HttpHandlerConfig httpHandlerConfig) {
         if (httpHandlerConfig == null) {
             log.warn("看似没有自定义 HuaHttp 配置。");
         }
         HttpRegistry registry = new HttpRegistry();
-        registry.setEnv(env);
         registry.setHttpProperty(httpProperty);
         registry.setHttpHandlerConfig(httpHandlerConfig);
         return registry;

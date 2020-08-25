@@ -19,12 +19,12 @@ public class HttpFactory<T> implements FactoryBean<T> {
 
     Class<T> interfaceClass;
 
-    Environment env;
+    Environment environment;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
 
-    public void setEnv(Environment env) {
-        this.env = env;
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
     }
 
     public void setHttpProperty(HttpProperty httpProperty) {
@@ -42,7 +42,7 @@ public class HttpFactory<T> implements FactoryBean<T> {
         return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
         }, new HttpHandler()
-                .setEnv(env)
+                .setEnvironment(environment)
                 .setHttpProperty(httpProperty)
                 .setHttpHandlerConfig(httpHandlerConfig)
                 .setInterfaceClass(interfaceClass));
