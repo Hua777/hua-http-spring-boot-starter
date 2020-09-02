@@ -6,11 +6,28 @@
 
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.5-RELEASE</version>
+    <version>1.0.6-RELEASE</version>
+
+    <!--    <groupId>com.bw.ae.iot</groupId>-->
+    <!--    <artifactId>hua-http-spring-boot-starter</artifactId>-->
+    <!--    <version>1.0.6.2-SNAPSHOT</version>-->
 
     <name>hua-http-spring-boot-starter</name>
     <description>SpringBoot 利用註解快速的編寫 HTTP 請求函數</description>
     <url>https://github.com/Hua777</url>
+
+    <!--    <distributionManagement>-->
+    <!--        <repository>-->
+    <!--            <id>ae-public</id>-->
+    <!--            <name>Nexus Release Repository</name>-->
+    <!--            <url>https://maven.bwae.org/repository/ae-iot-release/</url>-->
+    <!--        </repository>-->
+    <!--        <snapshotRepository>-->
+    <!--            <id>ae-public</id>-->
+    <!--            <name>Nexus Snapshot Repository</name>-->
+    <!--            <url>https://maven.bwae.org/repository/ae-iot-snapshot/</url>-->
+    <!--        </snapshotRepository>-->
+    <!--    </distributionManagement>-->
 
     <distributionManagement>
         <repository>
@@ -101,6 +118,12 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.66</version>
         </dependency>
 
         <dependency>

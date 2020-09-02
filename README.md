@@ -12,7 +12,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.5-RELEASE</version>
+    <version>1.0.6-RELEASE</version>
 </dependency>
 ```
 
@@ -264,6 +264,18 @@ public interface TestHttp {
     <groupId>com.google.code.gson</groupId>
     <artifactId>gson</artifactId>
     <version>2.8.6</version>
+</dependency>
+```
+
+### fast-json
+
+用於解析請求返回值 Json [FastJson](https://github.com/alibaba/fastjson)
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+    <version>1.2.66</version>
 </dependency>
 ```
 

@@ -1,5 +1,6 @@
 package com.github.hua777.huahttp.config;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -12,19 +13,17 @@ import com.github.hua777.huahttp.annotation.param.HuaHeader;
 import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
 import com.github.hua777.huahttp.bean.HttpHandlerMethod;
+import com.github.hua777.huahttp.bean.JsonMan;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.TokenTool;
-import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -116,36 +115,31 @@ public class HttpHandler implements InvocationHandler {
 
         //region 处理地址与请求方法
         HuaHttp huaHttp = interfaceClass.getAnnotation(HuaHttp.class);
-        if (huaHttp != null) {
-            baseUrl = getValue(huaHttp.value());
-        }
         HuaGet huaGet = method.getAnnotation(HuaGet.class);
         HuaPost huaPost = method.getAnnotation(HuaPost.class);
         HuaPut huaPut = method.getAnnotation(HuaPut.class);
         HuaDelete huaDelete = method.getAnnotation(HuaDelete.class);
-        Annotation huaMethodChild = null;
+        JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
+        if (httpHandlerConfig != null) {
+            jsonMan.setGson(httpHandlerConfig.getGson());
+        }
+        baseUrl = getValue(huaHttp.value());
         if (huaGet != null) {
             subUrl = getValue(huaGet.url());
-            huaMethodChild = huaGet;
+            httpMethod = HttpMethod.Get;
         } else if (huaPost != null) {
             subUrl = getValue(huaPost.url());
-            huaMethodChild = huaPost;
+            httpMethod = HttpMethod.Post;
         } else if (huaPut != null) {
             subUrl = getValue(huaPut.url());
-            huaMethodChild = huaPut;
+            httpMethod = HttpMethod.Put;
         } else if (huaDelete != null) {
             subUrl = getValue(huaDelete.url());
-            huaMethodChild = huaDelete;
+            httpMethod = HttpMethod.Delete;
         }
         fullUrl = baseUrl + subUrl;
-        if (fullUrl.equals("")) {
-            throw new InvalidParameterException("请求地址为空！");
-        }
-        if (huaMethodChild != null) {
-            HuaMethod huaMethod = huaMethodChild.annotationType().getAnnotation(HuaMethod.class);
-            if (huaMethod != null) {
-                httpMethod = huaMethod.method();
-            }
+        if (StrUtil.isEmpty(fullUrl)) {
+            throw new IllegalArgumentException("请求地址为空！");
         }
         //endregion
 
@@ -171,7 +165,7 @@ public class HttpHandler implements InvocationHandler {
             String[] names = typeHeader.names();
             String[] values = typeHeader.values();
             if (names.length != values.length) {
-                throw new InvalidParameterException("Header names 与 values 长度不匹配。");
+                throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
                 headers.put(getValue(names[i]), getValue(values[i]));
@@ -183,7 +177,7 @@ public class HttpHandler implements InvocationHandler {
             String[] names = methodHeader.names();
             String[] values = methodHeader.values();
             if (names.length != values.length) {
-                throw new InvalidParameterException("Header names 与 values 长度不匹配。");
+                throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
                 headers.put(getValue(names[i]), getValue(values[i]));
@@ -197,7 +191,7 @@ public class HttpHandler implements InvocationHandler {
             String[] names = methodParam.names();
             String[] values = methodParam.values();
             if (names.length != values.length) {
-                throw new InvalidParameterException("Param names 与 values 长度不匹配。");
+                throw new IllegalArgumentException("Param names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
                 params.put(getValue(names[i]), getValue(values[i]));
@@ -211,7 +205,7 @@ public class HttpHandler implements InvocationHandler {
             String[] names = methodBody.names();
             String[] values = methodBody.values();
             if (names.length != values.length) {
-                throw new InvalidParameterException("Body names 与 values 长度不匹配。");
+                throw new IllegalArgumentException("Body names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
                 bodies.put(getValue(names[i]), getValue(values[i]));
@@ -225,7 +219,7 @@ public class HttpHandler implements InvocationHandler {
             String[] names = methodPath.names();
             String[] values = methodPath.values();
             if (names.length != values.length) {
-                throw new InvalidParameterException("Path names 与 values 长度不匹配。");
+                throw new IllegalArgumentException("Path names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
                 paths.put(getValue(names[i]), getValue(values[i]));
@@ -234,6 +228,8 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理参数
+        boolean isFull = false;
+        String fullKey = null;
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
@@ -273,6 +269,10 @@ public class HttpHandler implements InvocationHandler {
             if (huaParam != null) {
                 params.put(paramName, arg.toString());
             } else if (huaBody != null) {
+                if (huaBody.full()) {
+                    isFull = true;
+                    fullKey = paramName;
+                }
                 bodies.put(paramName, arg);
             } else if (huaPath != null) {
                 paths.put(paramName, arg.toString());
@@ -294,15 +294,13 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        Gson gson = new Gson();
-
         log.debug("============ Hua-Http Invoke Debug Start ============");
         log.debug("Full Url: {}, Http Type: {}, Params: {}, Bodies: {}, Headers: {}",
                 fullUrl,
                 httpMethod.name(),
-                gson.toJson(params),
-                gson.toJson(bodies),
-                gson.toJson(headers)
+                jsonMan.toJson(params),
+                jsonMan.toJson(bodies),
+                jsonMan.toJson(headers)
         );
         log.debug("======================================================");
 
@@ -322,14 +320,22 @@ public class HttpHandler implements InvocationHandler {
                 if (isForm) {
                     req = HttpRequest.post(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
                 } else {
-                    req = HttpRequest.post(fullUrl).body(gson.toJson(bodies));
+                    if (isFull) {
+                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies.get(fullKey)));
+                    } else {
+                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies));
+                    }
                 }
                 break;
             case Put:
                 if (isForm) {
                     req = HttpRequest.put(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
                 } else {
-                    req = HttpRequest.put(fullUrl).body(gson.toJson(bodies));
+                    if (isFull) {
+                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies.get(fullKey)));
+                    } else {
+                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies));
+                    }
                 }
                 break;
             case Delete:
@@ -350,7 +356,7 @@ public class HttpHandler implements InvocationHandler {
 
         if (method.getReturnType().getTypeName().equals("void")) return null;
 
-        Object resultObject = gson.fromJson(resultString, method.getGenericReturnType());
+        Object resultObject = jsonMan.fromJson(resultString, method.getGenericReturnType());
         //endregion
 
         if (aopMethod != null) {

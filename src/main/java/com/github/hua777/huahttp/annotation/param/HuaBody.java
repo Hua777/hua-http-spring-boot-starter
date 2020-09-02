@@ -13,4 +13,6 @@ public @interface HuaBody {
     String[] values() default "";
 
     String method() default "";
+
+    boolean full() default false;
 }
