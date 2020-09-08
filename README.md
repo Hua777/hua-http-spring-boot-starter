@@ -2,6 +2,10 @@
 
 hua-http-spring-boot-starter
 
+平時都在 Spring 中使用 RestTemplate，有沒有發現寫著寫著太累了呢？
+
+這裏提供了利用註解的方式發送 Http 請求！
+
 ## :pencil2: 嗨
 
 SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
@@ -12,37 +16,11 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.6-RELEASE</version>
+    <version>1.0.7-RELEASE</version>
 </dependency>
 ```
 
-## 註解
-
-```java
-// TYPE
-@HuaHttp
-@HuaToken
-@HuaHeader
-@HuaAop
-
-// METHOD
-@HuaGet
-@HuaPost
-@HuaPut
-@HuaDelete
-@HuaToken
-@HuaHeader
-@HuaForm
-@HuaAop
-
-// PARAMETER
-@HuaParam
-@HuaBody
-@HuaHeader
-@HuaPath
-```
-
-## 配置文件設置掃描路徑（可選，默認掃描啟動類下所有包）
+## 配置文件設置掃描路徑（可選，默認掃描啟動類下）
 
 ```yaml
 com:
@@ -54,7 +32,7 @@ com:
 
 ## 教學
 
-### 基礎使用
+### 發送 Get、Delete 請求
 
 ```java
 @HuaHttp("http://hello-world.com")
@@ -65,6 +43,20 @@ public interface TestHttp {
      */
     @HuaGet(url = "/get/hello/world")
     String getHelloWorld(String hello);
+
+    /*
+     * http delete http://hello-world.com/delete/hello/world?hello=xxx
+     */
+    @HuaDelete(url = "/delete/hello/world")
+    String deleteHelloWorld(String hello);
+}
+```
+
+### 發送 Post、Put 請求
+
+```java
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
     
     /*
      * http post http://hello-world.com/post/hello/world
@@ -76,26 +68,105 @@ public interface TestHttp {
     String postHelloWorld(String hello); // default is body
 
     /*
-     * http post http://hello-world.com/post/hello/world?world=xxx
+     * http put http://hello-world.com/put/hello/world
+     * body = {
+     *     "hello": "xxx"
+     * }
+     */
+    @HuaPut(url = "/put/hello/world")
+    String putHelloWorld(String hello);
+}
+```
+
+### 使用配置地址
+
+```java
+@HuaHttp("${hello.world.url}")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world?hello=xxx
+     */
+    @HuaGet(url = "/get/hello/world")
+    String getHelloWorld(String hello);
+}
+```
+
+### Post、Put 請求中加上 Query
+
+```java
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+    
+    /*
+     * http post http://hello-world.com/post/hello/world?param=xxx
      * body = {
      *     "hello": "xxx"
      * }
      */
     @HuaPost(url = "/post/hello/world")
-    String postHelloWorldButUseParam(String hello, @HuaParam String world);
+    String postHelloWorld(String hello, @HuaParam String param);
+}
+```
+
+### 使用 Form 表單發送 Post、Put 請求
+
+```java
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
     
     /*
-     * http get http://hello-world.com/get/hello/world/xxx
+     * http post http://hello-world.com/post/hello/world
+     * body = hello=xxx&world=xxx
      */
-    @HuaGet(url = "/get/hello/world/{path}")
-    String testPath(@HuaPath String path);
+    @HuaForm
+    @HuaPost(url = "/post/hello/world")
+    String postHelloWorld(String hello, String world);
+}
+```
+
+### 使用對象發送 Post、Put 請求
+
+```java
+@Data
+public class YourBean {
+    String hello;
+    String world;
+}
+
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+    
+    /*
+     * http post http://hello-world.com/post/hello/world
+     * body = {
+     *     "hello": "xxx",
+     *     "world": "xxx"
+     * }
+     */
+    @HuaPost(url = "/post/hello/world")
+    String postHelloWorld(@HuaBody(full=true) YourBean myBean);
+}
+```
+
+### 請求地址帶變量
+
+```java
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+    
+    /*
+     * http post http://hello-world.com/post/hello/world/xxx
+     */
+    @HuaPost(url = "/post/hello/world/{pathValue}")
+    String postHelloWorld(@HuaPath String pathValue);
 }
 ```
 
 ### 請求時帶上 Header
 
 ```java
-@HuaHeader(names = {"big_token1"}, values = {"big_value1"})
+@HuaHeader(names = {"big_token1"}, values = {"big_value1"}) // 全局添加，優先級低
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
@@ -108,26 +179,17 @@ public interface TestHttp {
      * }
      */
     @HuaGet(url = "/get/hello/world")
-    @HuaHeader(names = {"token1"}, values = {"value1"})
-    String testHeader(@HuaHeader(name = "InputToken") String token);
+    @HuaHeader(names = {"token1"}, values = {"value1"}) // 此方法添加，優先級高
+    String testHeader(@HuaHeader(name = "InputToken") String token); // 變量添加
 }
 ```
 
 ### 請求時使用 Token
 
 ```java
-@HuaToken(name = "name1", key = "key1", iss = "iss1", sub = "sub1")
+@HuaToken(name = "name1", key = "key1", iss = "iss1", sub = "sub1") // 全局添加，優先級低
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
-
-    /*
-     * http get http://hello-world.com/get/hello/world
-     * headers {
-     *     "name1": "token1"
-     * }
-     */
-    @HuaGet(url = "/get/hello/world")
-    String testToken1();
 
     /*
      * http get http://hello-world.com/get/hello/world
@@ -136,14 +198,12 @@ public interface TestHttp {
      * }
      */
     @HuaGet(url = "/get/hello/world")
-    @HuaToken(name = "name2", key = "key2", iss = "iss2", sub = "sub2")
+    @HuaToken(name = "name2", key = "key2", iss = "iss2", sub = "sub2") // 此方法添加，優先級高
     String testToken2();
 }
 ```
 
-### 自定義請求上下文
-
-註冊預設配置
+### 自定義請求上下文（預設）
 
 ```java
 @Configuration
@@ -153,11 +213,6 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
         HttpHandlerSetting setting = new HttpHandlerSetting();
         setting.defaultMethod(new HttpHandlerMethod<YourBean>() {
             @Override
-            public Object[] start(Method method, Object[] args) {
-                return args;
-            }
-
-            @Override
             public void beforeHttpMethod(String fullUrl, HttpMethod httpMethod, Map<String, Object> bodies, Map<String, String> headers) {
 
             }
@@ -165,11 +220,6 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
             @Override
             public void afterHttpMethod(HttpResponse result) {
 
-            }
-
-            @Override
-            public YourBean end(Method method, YourBean result) {
-                return result;
             }
         });
         return setting;
@@ -191,7 +241,7 @@ public interface TestHttp {
 }
 ```
 
-註冊自定義名稱配置
+### 自定義請求上下文（指定）
 
 ```java
 @Configuration
@@ -201,11 +251,6 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
         HttpHandlerSetting setting = new HttpHandlerSetting();
         setting.addMethod("pleaseTagMe", new HttpHandlerMethod<YourBean>() {
             @Override
-            public Object[] start(Method method, Object[] args) {
-                return args;
-            }
-
-            @Override
             public void beforeHttpMethod(String fullUrl, HttpMethod httpMethod, Map<String, Object> bodies, Map<String, String> headers) {
 
             }
@@ -214,18 +259,11 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
             public void afterHttpMethod(HttpResponse result) {
 
             }
-
-            @Override
-            public YourBean end(Method method, YourBean result) {
-                return result;
-            }
         });
         return setting;
     }
 }
 ```
-
-使用自定義名稱配置
 
 ```java
 @HuaAop("pleaseTagMe")

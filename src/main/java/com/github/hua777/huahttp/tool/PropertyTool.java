@@ -73,7 +73,12 @@ public class PropertyTool {
                 try {
                     result.put(key, environment.getProperty(key));
                 } catch (Exception ex) {
-                    log.error("获取环境配置错误：Key={}", key);
+                    Object originValue = ps.getProperty(key);
+                    if (originValue != null) {
+                        result.put(key, originValue.toString());
+                    } else {
+                        log.error("获取环境配置错误！Key：{}", key);
+                    }
                 }
             });
             return result;

@@ -7,11 +7,15 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 public interface HttpHandlerMethod<T> {
-    Object[] start(Method method, Object[] args);
+    default Object[] start(Method method, Object[] args) {
+        return args;
+    }
 
     void beforeHttpMethod(String fullUrl, HttpMethod httpMethod, Map<String, Object> bodies, Map<String, String> headers);
 
     void afterHttpMethod(HttpResponse result);
 
-    T end(Method method, T result);
+    default T end(Method method, T result) {
+        return result;
+    }
 }
