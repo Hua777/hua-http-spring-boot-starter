@@ -1,6 +1,6 @@
 # SpringBoot 接口式註解，快速開發 HTTP 請求函數
 
-hua-http-spring-boot-starter
+GitHub: [hua-http-spring-boot-starter](https://github.com/Hua777/hua-http-spring-boot-starter)
 
 平時都在 Spring 中使用 RestTemplate，有沒有發現寫著寫著太累了呢？
 
@@ -31,6 +31,21 @@ com:
 ```
 
 ## 教學
+
+### 使用下面教程定义好的接口
+
+```java
+@Service
+public class MyService {
+    
+    @Autowired
+    TestHttp testhttp;
+
+    public void run() {
+        testhttp.get();
+    }
+}
+```
 
 ### 發送 Get、Delete 請求
 
