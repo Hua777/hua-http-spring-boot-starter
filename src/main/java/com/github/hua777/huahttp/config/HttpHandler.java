@@ -6,7 +6,6 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.github.hua777.huahttp.annotation.HuaAop;
 import com.github.hua777.huahttp.annotation.HuaHttp;
-import com.github.hua777.huahttp.annotation.enumrate.HttpMethod;
 import com.github.hua777.huahttp.annotation.method.*;
 import com.github.hua777.huahttp.annotation.param.HuaBody;
 import com.github.hua777.huahttp.annotation.param.HuaHeader;
@@ -74,7 +73,7 @@ public class HttpHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
 
-        HttpMethod httpMethod = HttpMethod.Get;
+        cn.hutool.http.Method httpMethod = cn.hutool.http.Method.GET;
 
         HashMap<String, String> headers = new HashMap<>();
         HashMap<String, Object> params = new HashMap<>();
@@ -127,16 +126,16 @@ public class HttpHandler implements InvocationHandler {
         baseUrl = getValue(huaHttp.value());
         if (huaGet != null) {
             subUrl = getValue(huaGet.url());
-            httpMethod = HttpMethod.Get;
+            httpMethod = cn.hutool.http.Method.GET;
         } else if (huaPost != null) {
             subUrl = getValue(huaPost.url());
-            httpMethod = HttpMethod.Post;
+            httpMethod = cn.hutool.http.Method.POST;
         } else if (huaPut != null) {
             subUrl = getValue(huaPut.url());
-            httpMethod = HttpMethod.Put;
+            httpMethod = cn.hutool.http.Method.PUT;
         } else if (huaDelete != null) {
             subUrl = getValue(huaDelete.url());
-            httpMethod = HttpMethod.Delete;
+            httpMethod = cn.hutool.http.Method.DELETE;
         }
         fullUrl = baseUrl + subUrl;
         if (StrUtil.isEmpty(fullUrl)) {
@@ -229,13 +228,10 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理参数
-
         boolean bodyIsFull = false;
         String bodyFullKey = null;
-
         boolean paramIsFull = false;
         String paramFullKey = null;
-
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
@@ -316,52 +312,37 @@ public class HttpHandler implements InvocationHandler {
             aopMethod.beforeHttpMethod(fullUrl, httpMethod, bodies, headers);
         }
 
-        //region 处理返回值
-        HttpRequest req = null;
+        //region 发送请求
+        HttpRequest req = (new HttpRequest(fullUrl)).method(httpMethod);
         switch (httpMethod) {
-            case Get:
-                req = HttpRequest.get(fullUrl);
-                break;
-            case Post:
+            case POST:
+            case PUT:
                 if (isForm) {
-                    req = HttpRequest.post(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
+                    req = req.contentType("application/x-www-form-urlencoded");
+                    if (bodyIsFull) {
+                        req = req.form(jsonMan.toMap(bodies.get(bodyFullKey)));
+                    } else {
+                        req = req.form(bodies);
+                    }
                 } else {
                     if (bodyIsFull) {
-                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies.get(bodyFullKey)));
+                        req = req.body(jsonMan.toJson(bodies.get(bodyFullKey)));
                     } else {
-                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies));
+                        req = req.body(jsonMan.toJson(bodies));
                     }
                 }
-                break;
-            case Put:
-                if (isForm) {
-                    req = HttpRequest.put(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
-                } else {
-                    if (bodyIsFull) {
-                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies.get(bodyFullKey)));
-                    } else {
-                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies));
-                    }
-                }
-                break;
-            case Delete:
-                req = HttpRequest.delete(fullUrl);
                 break;
         }
         HttpResponse response = req.addHeaders(headers).setFollowRedirects(true).execute();
+        //endregion
 
         if (aopMethod != null) {
             aopMethod.afterHttpMethod(response);
         }
 
+        //region 处理返回值
         String resultString = response.body();
-
-        log.debug("============ Hua-Http Invoke Debug End ============");
-        log.debug("Return String: {}", resultString);
-        log.debug("====================================================");
-
         if (method.getReturnType().getTypeName().equals("void")) return null;
-
         Object resultObject = jsonMan.fromJson(resultString, method.getGenericReturnType());
         //endregion
 
