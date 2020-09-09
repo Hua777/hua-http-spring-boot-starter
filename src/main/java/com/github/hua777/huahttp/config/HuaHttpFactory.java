@@ -1,5 +1,7 @@
 package com.github.hua777.huahttp.config;
 
+import com.github.hua777.huahttp.aware.HuaHttpHandlerConfigAware;
+import com.github.hua777.huahttp.property.HttpHandlerConfig;
 import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -9,11 +11,11 @@ import org.springframework.core.env.Environment;
 
 import java.lang.reflect.Proxy;
 
-public class HttpFactory<T> implements FactoryBean<T> {
+public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAware {
 
-    static Logger log = LoggerFactory.getLogger(HttpFactory.class);
+    static Logger log = LoggerFactory.getLogger(HuaHttpFactory.class);
 
-    public HttpFactory(Class<T> interfaceClass) {
+    public HuaHttpFactory(Class<T> interfaceClass) {
         this.interfaceClass = interfaceClass;
     }
 
@@ -31,6 +33,7 @@ public class HttpFactory<T> implements FactoryBean<T> {
         this.httpProperty = httpProperty;
     }
 
+    @Override
     public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
         this.httpHandlerConfig = httpHandlerConfig;
     }

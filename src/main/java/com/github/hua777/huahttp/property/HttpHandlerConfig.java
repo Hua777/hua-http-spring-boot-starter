@@ -1,4 +1,4 @@
-package com.github.hua777.huahttp.config;
+package com.github.hua777.huahttp.property;
 
 import com.github.hua777.huahttp.bean.HttpHandlerSetting;
 import com.google.gson.Gson;

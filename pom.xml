@@ -6,7 +6,7 @@
 
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.7-RELEASE</version>
+    <version>1.0.8-RELEASE</version>
 
     <!--    <groupId>com.bw.ae.iot</groupId>-->
     <!--    <artifactId>hua-http-spring-boot-starter</artifactId>-->

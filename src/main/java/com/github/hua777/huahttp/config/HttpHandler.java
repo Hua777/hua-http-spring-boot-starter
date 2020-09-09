@@ -14,6 +14,7 @@ import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
 import com.github.hua777.huahttp.bean.HttpHandlerMethod;
 import com.github.hua777.huahttp.bean.JsonMan;
+import com.github.hua777.huahttp.property.HttpHandlerConfig;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
@@ -228,8 +229,13 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理参数
-        boolean isFull = false;
-        String fullKey = null;
+
+        boolean bodyIsFull = false;
+        String bodyFullKey = null;
+
+        boolean paramIsFull = false;
+        String paramFullKey = null;
+
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
@@ -267,11 +273,15 @@ public class HttpHandler implements InvocationHandler {
             }
             //endregion
             if (huaParam != null) {
-                params.put(paramName, arg.toString());
+                if (huaParam.full()) {
+                    paramIsFull = true;
+                    paramFullKey = paramName;
+                }
+                params.put(paramName, arg);
             } else if (huaBody != null) {
                 if (huaBody.full()) {
-                    isFull = true;
-                    fullKey = paramName;
+                    bodyIsFull = true;
+                    bodyFullKey = paramName;
                 }
                 bodies.put(paramName, arg);
             } else if (huaPath != null) {
@@ -282,7 +292,7 @@ public class HttpHandler implements InvocationHandler {
                 if (huaPost != null || huaPut != null) {
                     bodies.put(paramName, arg);
                 } else {
-                    params.put(paramName, arg.toString());
+                    params.put(paramName, arg);
                 }
             }
         }
@@ -294,23 +304,19 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        log.debug("============ Hua-Http Invoke Debug Start ============");
-        log.debug("Full Url: {}, Http Type: {}, Params: {}, Bodies: {}, Headers: {}",
-                fullUrl,
-                httpMethod.name(),
-                jsonMan.toJson(params),
-                jsonMan.toJson(bodies),
-                jsonMan.toJson(headers)
-        );
-        log.debug("======================================================");
-
-        //region 处理返回值
-        fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
+        //region 处理 Params
+        if (paramIsFull) {
+            fullUrl = HttpUtil.urlWithForm(fullUrl, jsonMan.toMap(params.get(paramFullKey)), StandardCharsets.UTF_8, true);
+        } else {
+            fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
+        }
+        //endregion
 
         if (aopMethod != null) {
             aopMethod.beforeHttpMethod(fullUrl, httpMethod, bodies, headers);
         }
 
+        //region 处理返回值
         HttpRequest req = null;
         switch (httpMethod) {
             case Get:
@@ -320,8 +326,8 @@ public class HttpHandler implements InvocationHandler {
                 if (isForm) {
                     req = HttpRequest.post(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
                 } else {
-                    if (isFull) {
-                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies.get(fullKey)));
+                    if (bodyIsFull) {
+                        req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies.get(bodyFullKey)));
                     } else {
                         req = HttpRequest.post(fullUrl).body(jsonMan.toJson(bodies));
                     }
@@ -331,8 +337,8 @@ public class HttpHandler implements InvocationHandler {
                 if (isForm) {
                     req = HttpRequest.put(fullUrl).contentType("application/x-www-form-urlencoded").form(bodies);
                 } else {
-                    if (isFull) {
-                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies.get(fullKey)));
+                    if (bodyIsFull) {
+                        req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies.get(bodyFullKey)));
                     } else {
                         req = HttpRequest.put(fullUrl).body(jsonMan.toJson(bodies));
                     }

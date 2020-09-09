@@ -13,4 +13,6 @@ public @interface HuaParam {
     String[] values() default "";
 
     String method() default "";
+
+    boolean full() default false;
 }

@@ -19,7 +19,6 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
     static Logger log = LoggerFactory.getLogger(HttpScanner.class);
 
     HttpProperty httpProperty;
-    HttpHandlerConfig httpHandlerConfig;
 
     public HttpScanner(BeanDefinitionRegistry registry) {
         super(registry);
@@ -27,10 +26,6 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
 
     public void setHttpProperty(HttpProperty httpProperty) {
         this.httpProperty = httpProperty;
-    }
-
-    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
-        this.httpHandlerConfig = httpHandlerConfig;
     }
 
     @Override
@@ -47,10 +42,9 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
             GenericBeanDefinition definition = (GenericBeanDefinition) beanDefinition.getBeanDefinition();
             definition.getConstructorArgumentValues().addGenericArgumentValue(definition.getBeanClassName());
             definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
-            definition.setBeanClass(HttpFactory.class);
+            definition.setBeanClass(HuaHttpFactory.class);
             definition.getPropertyValues().add("environment", getEnvironment());
             definition.getPropertyValues().add("httpProperty", httpProperty);
-            definition.getPropertyValues().add("httpHandlerConfig", httpHandlerConfig);
         }
         return beanDefinitions;
     }

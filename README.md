@@ -16,7 +16,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.0.7-RELEASE</version>
+    <version>1.0.8-RELEASE</version>
 </dependency>
 ```
 
@@ -140,7 +140,7 @@ public interface TestHttp {
 }
 ```
 
-### 使用對象發送 Post、Put 請求
+### 使用對象發送 Get、Post、Put、Delete 請求
 
 ```java
 @Data
@@ -153,14 +153,14 @@ public class YourBean {
 public interface TestHttp {
     
     /*
-     * http post http://hello-world.com/post/hello/world
+     * http post http://hello-world.com/post/hello/world?hello=xxx&world=xxx
      * body = {
      *     "hello": "xxx",
      *     "world": "xxx"
      * }
      */
     @HuaPost(url = "/post/hello/world")
-    String postHelloWorld(@HuaBody(full=true) YourBean myBean);
+    String postHelloWorld(@HuaParam(full=true) YourBean paramBean, @HuaBody(full=true) YourBean bodyBean);
 }
 ```
 

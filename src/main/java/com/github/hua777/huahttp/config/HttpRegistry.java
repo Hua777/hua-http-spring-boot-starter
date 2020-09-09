@@ -29,14 +29,9 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor,
     BeanFactory beanFactory;
 
     HttpProperty httpProperty;
-    HttpHandlerConfig httpHandlerConfig;
 
     public void setHttpProperty(HttpProperty httpProperty) {
         this.httpProperty = httpProperty;
-    }
-
-    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
-        this.httpHandlerConfig = httpHandlerConfig;
     }
 
     @Override
@@ -63,7 +58,6 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor,
         HttpScanner scanner = new HttpScanner(registry);
         scanner.setEnvironment(environment);
         scanner.setHttpProperty(httpProperty);
-        scanner.setHttpHandlerConfig(httpHandlerConfig);
         scanner.setResourceLoader(applicationContext);
         scanner.doScan(defaultScanPackages.toArray(new String[0]));
     }

@@ -5,6 +5,7 @@ import com.github.hua777.huahttp.enumerate.JsonType;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 
 public class JsonMan {
 
@@ -13,6 +14,11 @@ public class JsonMan {
     }
 
     Gson gson = new Gson();
+
+    public <T> HashMap<String, Object> toMap(T object) {
+        HashMap<String, Object> map = new HashMap<>();
+        return fromJson(toJson(object), map.getClass());
+    }
 
     public <T> T fromJson(String object, Type type) {
         switch (jsonType) {
