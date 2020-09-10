@@ -228,12 +228,12 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
         HttpHandlerSetting setting = new HttpHandlerSetting();
         setting.defaultMethod(new HttpHandlerMethod<YourBean>() {
             @Override
-            public void beforeHttpMethod(String fullUrl, Method httpMethod, Map<String, Object> bodies, Map<String, String> headers) {
+            public void beforeHttpMethod(HttpRequest request) {
 
             }
 
             @Override
-            public void afterHttpMethod(HttpResponse result) {
+            public void afterHttpMethod(HttpResponse response) {
 
             }
         });
@@ -293,6 +293,46 @@ public interface TestHttp {
     String getHelloWorld(String hello);
 }
 ```
+
+### 使用转换器
+
+有个接口定义如下，返回复数
+
+```java
+@PostMapping("/test")
+public Response<Complex> testPost(@RequestBody Complex complex) {
+    return new Response<>(complex);
+}
+```
+
+你想把请求这个接口返回的复数转成可爱的复数，并且不含 Response
+
+先定义请求接口
+
+```java
+@HuaHttp("xxx")
+public interface TestHttp {
+
+    @HuaConvert(CuteConverter.class) // 定义转换器类
+    @HuaPost(url = "/test")
+    CuteComplex getHelloWorld(Complex complex);
+}
+```
+
+在定义转换器
+
+```java
+public class CuteConverter implements Converter<CuteComplex> {
+    @Override
+    public CuteComplex convert(String responseBody, Type returnType, JsonMan jsonMan) {
+        Response<Complex> resp = jsonMan.fromJson(responseBody, new TypeReference<Response<Complex>>(){}.getType());
+        CuteComplex complex = new CuteComplex(resp.getData().getReal(), resp.getData().getImage());
+        return complex;
+    }
+}
+```
+
+完成
 
 ## 這個項目使用的依賴包
 
