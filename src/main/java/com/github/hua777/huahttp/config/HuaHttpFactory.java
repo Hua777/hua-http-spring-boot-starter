@@ -1,7 +1,7 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.aware.HuaHttpHandlerConfigAware;
-import com.github.hua777.huahttp.property.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -40,19 +40,24 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAw
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull T getObject() {
-        log.info("HuaHttp 为您生产 Bean {}", interfaceClass.getName());
-        return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
+    public @NotNull
+    T getObject() {
+        long start = System.currentTimeMillis();
+        T object = (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
         }, new HttpHandler()
                 .setEnvironment(environment)
                 .setHttpProperty(httpProperty)
                 .setHttpHandlerConfig(httpHandlerConfig)
                 .setInterfaceClass(interfaceClass));
+        long end = System.currentTimeMillis();
+        log.info("HuaHttp 为您生产 Bean {}（{}s）", interfaceClass.getName(), ((end - start) / 1000.0F));
+        return object;
     }
 
     @Override
-    public @NotNull Class<T> getObjectType() {
+    public @NotNull
+    Class<T> getObjectType() {
         return interfaceClass;
     }
 

@@ -11,9 +11,11 @@ import com.github.hua777.huahttp.annotation.param.HuaBody;
 import com.github.hua777.huahttp.annotation.param.HuaHeader;
 import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
-import com.github.hua777.huahttp.bean.HttpHandlerMethod;
 import com.github.hua777.huahttp.bean.JsonMan;
-import com.github.hua777.huahttp.property.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
+import com.github.hua777.huahttp.config.convert.Converter;
+import com.github.hua777.huahttp.config.convert.DefaultConverter;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
@@ -95,15 +97,15 @@ public class HttpHandler implements InvocationHandler {
                 String methodName = getValue(huaAop.value());
                 aopMethod = httpHandlerConfig.getSetting().getMethod(methodName);
                 if (aopMethod == null) {
-                    log.debug("无法从配置文件中找到 {} 函数", methodName);
+                    log.error("无法从配置文件中找到 {} 函数", methodName);
                 }
             }
         }
-        //endregion
-
-        if (aopMethod != null) {
-            args = aopMethod.start(method, args);
+        if (aopMethod == null) {
+            aopMethod = new HttpHandlerMethod<Object>() {
+            };
         }
+        //endregion
 
         //region 检查是否为表单类型
         boolean isForm = false;
@@ -308,10 +310,6 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        if (aopMethod != null) {
-            aopMethod.beforeHttpMethod(fullUrl, httpMethod, bodies, headers);
-        }
-
         //region 发送请求
         HttpRequest req = (new HttpRequest(fullUrl)).method(httpMethod);
         switch (httpMethod) {
@@ -325,6 +323,7 @@ public class HttpHandler implements InvocationHandler {
                         req = req.form(bodies);
                     }
                 } else {
+                    req = req.contentType("application/json");
                     if (bodyIsFull) {
                         req = req.body(jsonMan.toJson(bodies.get(bodyFullKey)));
                     } else {
@@ -333,22 +332,26 @@ public class HttpHandler implements InvocationHandler {
                 }
                 break;
         }
-        HttpResponse response = req.addHeaders(headers).setFollowRedirects(true).execute();
+        HttpRequest request = req.addHeaders(headers).setFollowRedirects(true);
         //endregion
 
-        if (aopMethod != null) {
-            aopMethod.afterHttpMethod(response);
-        }
+        aopMethod.beforeHttpMethod(request);
+
+        HttpResponse response = request.execute();
+
+        aopMethod.afterHttpMethod(response);
 
         //region 处理返回值
         String resultString = response.body();
-        if (method.getReturnType().getTypeName().equals("void")) return null;
-        Object resultObject = jsonMan.fromJson(resultString, method.getGenericReturnType());
-        //endregion
-
-        if (aopMethod != null) {
-            resultObject = aopMethod.end(method, resultObject);
+        HuaConvert huaConvert = method.getAnnotation(HuaConvert.class);
+        Converter<Object> converter;
+        if (huaConvert != null) {
+            converter = huaConvert.value().newInstance();
+        } else {
+            converter = new DefaultConverter();
         }
+        Object resultObject = converter.convert(resultString, method.getGenericReturnType(), jsonMan);
+        //endregion
 
         return resultObject;
     }

@@ -1,4 +1,4 @@
-package com.github.hua777.huahttp.bean;
+package com.github.hua777.huahttp.config.aop;
 
 import java.util.HashMap;
 

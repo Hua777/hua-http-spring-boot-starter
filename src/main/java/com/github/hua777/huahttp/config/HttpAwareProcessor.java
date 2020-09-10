@@ -1,7 +1,7 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.aware.HuaHttpHandlerConfigAware;
-import com.github.hua777.huahttp.property.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -35,7 +35,8 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
     }
 
     @Override
-    public @NotNull Set<BeanDefinitionHolder> doScan(String @NotNull ... basePackages) {
+    public @NotNull
+    Set<BeanDefinitionHolder> doScan(String @NotNull ... basePackages) {
         log.info("HuaHttp 扫描路径（{}）下的 @HuaHttp", String.join(",", basePackages));
         Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
         for (BeanDefinitionHolder beanDefinition : beanDefinitions) {
