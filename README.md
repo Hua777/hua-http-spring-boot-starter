@@ -2,9 +2,7 @@
 
 GitHub: [hua-http-spring-boot-starter](https://github.com/Hua777/hua-http-spring-boot-starter)
 
-平時都在 Spring 中使用 RestTemplate，有沒有發現寫著寫著太累了呢？
-
-這裏提供了利用註解的方式發送 Http 請求！
+在 SpringBoot 中用註解的方式請求 Http
 
 ## :pencil2: 嗨
 
@@ -32,7 +30,7 @@ com:
 
 ## 教學
 
-### 使用下面教程定义好的接口
+### 使用下面教程定義好的接口
 
 ```java
 @Service
@@ -294,9 +292,9 @@ public interface TestHttp {
 }
 ```
 
-### 使用转换器
+### 使用轉換器
 
-有个接口定义如下，返回复数
+有個接口定義如下，返回復數
 
 ```java
 @PostMapping("/test")
@@ -305,21 +303,21 @@ public Response<Complex> testPost(@RequestBody Complex complex) {
 }
 ```
 
-你想把请求这个接口返回的复数转成可爱的复数，并且不含 Response
+你想把請求這個接口返回的復數轉成可愛的復數，並且不含 Response
 
-先定义请求接口
+先定義請求接口
 
 ```java
 @HuaHttp("xxx")
 public interface TestHttp {
 
-    @HuaConvert(CuteConverter.class) // 定义转换器类
+    @HuaConvert(CuteConverter.class) // 定義轉換器類
     @HuaPost(url = "/test")
     CuteComplex getHelloWorld(Complex complex);
 }
 ```
 
-在定义转换器
+在定義轉換器
 
 ```java
 public class CuteConverter implements Converter<CuteComplex> {
