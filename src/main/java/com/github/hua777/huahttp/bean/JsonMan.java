@@ -5,6 +5,7 @@ import com.github.hua777.huahttp.enumerate.JsonType;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.HashMap;
 
 public class JsonMan {
@@ -20,7 +21,43 @@ public class JsonMan {
         return fromJson(toJson(object), map.getClass());
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T fromJson(String object, Type type) {
+        String[] classNames = type.getTypeName().split("\\.");
+        String typeName = classNames[classNames.length - 1];
+        if (typeName.equals("Void") || typeName.equals("void")) {
+            return null;
+        }
+        if (typeName.equals("String")) {
+            return (T) object;
+        }
+        if (typeName.equals("Byte") || typeName.equals("byte")) {
+            return (T) ((Byte) Byte.parseByte(object));
+        }
+        if (typeName.equals("Short") || typeName.equals("short")) {
+            return (T) ((Short) Short.parseShort(object));
+        }
+        if (typeName.equals("Integer") || typeName.equals("int")) {
+            return (T) ((Integer) Integer.parseInt(object));
+        }
+        if (typeName.equals("Long") || typeName.equals("long")) {
+            return (T) ((Long) Long.parseLong(object));
+        }
+        if (typeName.equals("Float") || typeName.equals("float")) {
+            return (T) ((Float) Float.parseFloat(object));
+        }
+        if (typeName.equals("Double") || typeName.equals("double")) {
+            return (T) ((Double) Double.parseDouble(object));
+        }
+        if (typeName.equals("Boolean") || typeName.equals("boolean")) {
+            return (T) ((Boolean) Boolean.parseBoolean(object));
+        }
+        if (typeName.equals("Character") || typeName.equals("char")) {
+            return (T) (Character) object.charAt(0);
+        }
+        if (typeName.equals("BigDecimal")) {
+            return (T) (new BigDecimal(object));
+        }
         switch (jsonType) {
             case FastJson:
                 return JSONObject.parseObject(object, type);

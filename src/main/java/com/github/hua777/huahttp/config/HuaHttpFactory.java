@@ -6,12 +6,15 @@ import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.Proxy;
 
-public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAware {
+public class HuaHttpFactory<T> implements FactoryBean<T>, BeanFactoryAware, HuaHttpHandlerConfigAware {
 
     static Logger log = LoggerFactory.getLogger(HuaHttpFactory.class);
 
@@ -24,6 +27,8 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAw
     Environment environment;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
+
+    BeanFactory beanFactory;
 
     public void setEnvironment(Environment environment) {
         this.environment = environment;
@@ -38,6 +43,11 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAw
         this.httpHandlerConfig = httpHandlerConfig;
     }
 
+    @Override
+    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull
@@ -49,7 +59,8 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAw
                 .setEnvironment(environment)
                 .setHttpProperty(httpProperty)
                 .setHttpHandlerConfig(httpHandlerConfig)
-                .setInterfaceClass(interfaceClass));
+                .setInterfaceClass(interfaceClass)
+                .setBeanFactory(beanFactory));
         long end = System.currentTimeMillis();
         log.info("HuaHttp 为您生产 Bean {}（{}s）", interfaceClass.getName(), ((end - start) / 1000.0F));
         return object;
@@ -65,5 +76,4 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, HuaHttpHandlerConfigAw
     public boolean isSingleton() {
         return true;
     }
-
 }

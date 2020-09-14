@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.github.hua777.huahttp.annotation.HuaAop;
 import com.github.hua777.huahttp.annotation.HuaHttp;
 import com.github.hua777.huahttp.annotation.method.*;
@@ -16,10 +17,15 @@ import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
 import com.github.hua777.huahttp.config.convert.Converter;
 import com.github.hua777.huahttp.config.convert.DefaultConverter;
+import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
+import com.github.hua777.huahttp.config.creator.HeadersCreator;
 import com.github.hua777.huahttp.property.HttpProperty;
+import com.github.hua777.huahttp.tool.MapTool;
 import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.InvocationHandler;
@@ -38,6 +44,7 @@ public class HttpHandler implements InvocationHandler {
     Environment environment;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
+    BeanFactory beanFactory;
 
     public HttpHandler() {
     }
@@ -62,6 +69,11 @@ public class HttpHandler implements InvocationHandler {
         return this;
     }
 
+    public HttpHandler setBeanFactory(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+        return this;
+    }
+
     private String getValue(String key) {
         if (key.startsWith("${") && key.endsWith("}")) {
             key = key.substring(2);
@@ -69,6 +81,42 @@ public class HttpHandler implements InvocationHandler {
             return environment.getProperty(key);
         }
         return key;
+    }
+
+    private HeadersCreator getHeadersCreator(HuaHeader huaHeader) throws IllegalAccessException, InstantiationException {
+        HeadersCreator creator;
+        if (huaHeader != null) {
+            Class<? extends HeadersCreator> clazz = huaHeader.creator();
+            try {
+                creator = beanFactory.getBean(clazz);
+            } catch (BeansException ignored) {
+                creator = huaHeader.creator().newInstance();
+            }
+        } else {
+            creator = new DefaultHeadersCreator();
+        }
+        return creator;
+    }
+
+    private Converter<?> getConverter(HuaConvert huaConvert) throws IllegalAccessException, InstantiationException {
+        Converter<?> converter;
+        if (huaConvert != null) {
+            Class<? extends Converter> clazz = huaConvert.value();
+            try {
+                converter = beanFactory.getBean(clazz);
+            } catch (BeansException ignored) {
+                converter = huaConvert.value().newInstance();
+            }
+        } else {
+            converter = new DefaultConverter();
+        }
+        return converter;
+    }
+
+    private void mergeHeaders(HashMap<String, String> headers, HuaHeader huaHeader) throws IllegalAccessException, InstantiationException {
+        if (huaHeader != null) {
+            MapTool.merge(headers, getHeadersCreator(huaHeader).headers());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -156,8 +204,11 @@ public class HttpHandler implements InvocationHandler {
             String sub = getValue(huaToken.sub());
             long iat = Long.parseLong(getValue(huaToken.issuedAtTimeThresholdMs()));
             long vp = Long.parseLong(getValue(huaToken.validityPeriodMs()));
+            String name = getValue(huaToken.name());
             String token = TokenTool.createJWTByHMAC256(key, iss, sub, iat, vp);
-            headers.put(getValue(huaToken.name()), token);
+            if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(token)) {
+                headers.put(name, token);
+            }
         }
         //endregion
 
@@ -170,8 +221,13 @@ public class HttpHandler implements InvocationHandler {
                 throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
-                headers.put(getValue(names[i]), getValue(values[i]));
+                String name = getValue(names[i]);
+                String value = getValue(values[i]);
+                if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(value)) {
+                    headers.put(name, value);
+                }
             }
+            mergeHeaders(headers, typeHeader);
         }
 
         HuaHeader methodHeader = method.getAnnotation(HuaHeader.class);
@@ -182,8 +238,13 @@ public class HttpHandler implements InvocationHandler {
                 throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
             }
             for (int i = 0; i < names.length; ++i) {
-                headers.put(getValue(names[i]), getValue(values[i]));
+                String name = getValue(names[i]);
+                String value = getValue(values[i]);
+                if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(value)) {
+                    headers.put(name, value);
+                }
             }
+            mergeHeaders(headers, methodHeader);
         }
         //endregion
 
@@ -285,7 +346,10 @@ public class HttpHandler implements InvocationHandler {
             } else if (huaPath != null) {
                 paths.put(paramName, arg.toString());
             } else if (huaHeader != null) {
-                headers.put(paramName, arg.toString());
+                String value = arg.toString();
+                if (!StrUtil.isEmpty(paramName) && !StrUtil.isEmpty(value)) {
+                    headers.put(paramName, value);
+                }
             } else {
                 if (huaPost != null || huaPut != null) {
                     bodies.put(paramName, arg);
@@ -332,6 +396,7 @@ public class HttpHandler implements InvocationHandler {
                 }
                 break;
         }
+        log.info(JSONObject.toJSONString(headers));
         HttpRequest request = req.addHeaders(headers).setFollowRedirects(true);
         //endregion
 
@@ -344,13 +409,7 @@ public class HttpHandler implements InvocationHandler {
         //region 处理返回值
         String resultString = response.body();
         HuaConvert huaConvert = method.getAnnotation(HuaConvert.class);
-        Converter<Object> converter;
-        if (huaConvert != null) {
-            converter = huaConvert.value().newInstance();
-        } else {
-            converter = new DefaultConverter();
-        }
-        Object resultObject = converter.convert(resultString, method.getGenericReturnType(), jsonMan);
+        Object resultObject = getConverter(huaConvert).convert(resultString, method.getGenericReturnType(), jsonMan);
         //endregion
 
         return resultObject;
