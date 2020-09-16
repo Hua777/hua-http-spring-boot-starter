@@ -352,7 +352,6 @@ public interface TestHttp {
 ```
 
 ```java
-@Configuration
 public class MyHeaderCreator implements HeadersCreator {
 
     @Override

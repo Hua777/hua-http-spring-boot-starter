@@ -21,6 +21,10 @@
     <!--        </snapshotRepository>-->
     <!--    </distributionManagement>-->
 
+    <groupId>com.github.hua777</groupId>
+    <artifactId>hua-http-spring-boot-starter</artifactId>
+    <version>1.1.4-RELEASE</version>
+
     <name>hua-http-spring-boot-starter</name>
     <description>SpringBoot 利用註解快速的編寫 HTTP 請求函數</description>
     <url>https://github.com/Hua777</url>
@@ -34,10 +38,6 @@
         <slf4j-api.version>2.0.0-alpha1</slf4j-api.version>
         <logback.version>1.3.0-alpha5</logback.version>
     </properties>
-
-    <groupId>com.github.hua777</groupId>
-    <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.1.4-RELEASE</version>
 
     <distributionManagement>
         <repository>
