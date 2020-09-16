@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.github.hua777.huahttp.annotation.HuaAop;
 import com.github.hua777.huahttp.annotation.HuaHttp;
 import com.github.hua777.huahttp.annotation.method.*;
@@ -135,7 +134,7 @@ public class HttpHandler implements InvocationHandler {
         String fullUrl;
 
         //region 获取切片方法
-        HttpHandlerMethod<Object> aopMethod = null;
+        HttpHandlerMethod aopMethod = null;
         if (httpHandlerConfig != null) {
             HuaAop huaAop = interfaceClass.getAnnotation(HuaAop.class);
             if (huaAop == null) {
@@ -150,7 +149,7 @@ public class HttpHandler implements InvocationHandler {
             }
         }
         if (aopMethod == null) {
-            aopMethod = new HttpHandlerMethod<Object>() {
+            aopMethod = new HttpHandlerMethod() {
             };
         }
         //endregion
@@ -368,7 +367,7 @@ public class HttpHandler implements InvocationHandler {
 
         //region 处理 Params
         if (paramIsFull) {
-            fullUrl = HttpUtil.urlWithForm(fullUrl, jsonMan.toMap(params.get(paramFullKey)), StandardCharsets.UTF_8, true);
+            fullUrl = HttpUtil.urlWithForm(fullUrl, MapTool.toMap(params.get(paramFullKey)), StandardCharsets.UTF_8, true);
         } else {
             fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
         }
@@ -382,7 +381,7 @@ public class HttpHandler implements InvocationHandler {
                 if (isForm) {
                     req = req.contentType("application/x-www-form-urlencoded");
                     if (bodyIsFull) {
-                        req = req.form(jsonMan.toMap(bodies.get(bodyFullKey)));
+                        req = req.form(MapTool.toMap(bodies.get(bodyFullKey)));
                     } else {
                         req = req.form(bodies);
                     }
@@ -396,13 +395,19 @@ public class HttpHandler implements InvocationHandler {
                 }
                 break;
         }
-        log.info(JSONObject.toJSONString(headers));
-        HttpRequest request = req.addHeaders(headers).setFollowRedirects(true);
+        HttpRequest request = req
+                .timeout(httpProperty.getHttpTimeoutSeconds())
+                .addHeaders(headers)
+                .setFollowRedirects(httpProperty.getHttpRedirects());
         //endregion
 
         aopMethod.beforeHttpMethod(request);
 
         HttpResponse response = request.execute();
+
+        if (!response.isOk()) {
+            log.error("请求不成功！返回状态码：{}，返回内容：{}", response.getStatus(), response.body());
+        }
 
         aopMethod.afterHttpMethod(response);
 

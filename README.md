@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.1.3-RELEASE</version>
+    <version>1.1.4-RELEASE</version>
 </dependency>
 ```
 
@@ -26,6 +26,8 @@ com:
     hua777:
       hua-http-spring-boot-starter:
         scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
+        http-timeout-seconds: 60 # 默认 60
+        http-redirects: true # 默认 true
 ```
 
 ## 教學
@@ -331,6 +333,37 @@ public class CuteConverter implements Converter<CuteComplex> {
 ```
 
 完成
+
+### 动态 Header
+
+```java
+@HuaHeader(creator = MyHeaderCreator.class)
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/get/hello/world?hello=xxx
+     */
+    @HuaHeader(creator = MyHeaderCreator.class)
+    @HuaGet(url = "/get/hello/world")
+    String getHelloWorld(String hello);
+
+}
+```
+
+```java
+@Configuration
+public class MyHeaderCreator implements HeadersCreator {
+
+    @Override
+    public HashMap<String, String> headers() {
+        return new HashMap<String, String>() {{
+            put("key", "value");
+        }};
+    }
+
+}
+```
 
 ## 這個項目使用的依賴包
 
