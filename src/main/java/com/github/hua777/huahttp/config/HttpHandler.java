@@ -396,7 +396,7 @@ public class HttpHandler implements InvocationHandler {
                 break;
         }
         HttpRequest request = req
-                .timeout(httpProperty.getHttpTimeoutSeconds())
+                .timeout(httpProperty.getHttpTimeoutSeconds() * 1000)
                 .addHeaders(headers)
                 .setFollowRedirects(httpProperty.getHttpRedirects());
         //endregion
