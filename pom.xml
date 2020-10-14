@@ -23,7 +23,7 @@
 
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.1.5-RELEASE</version>
+    <version>1.1.6-RELEASE</version>
 
     <name>hua-http-spring-boot-starter</name>
     <description>SpringBoot 利用註解快速的編寫 HTTP 請求函數</description>

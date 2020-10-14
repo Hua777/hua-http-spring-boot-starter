@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.InvocationHandler;
@@ -82,14 +83,14 @@ public class HttpHandler implements InvocationHandler {
         return key;
     }
 
-    private HeadersCreator getHeadersCreator(HuaHeader huaHeader) throws IllegalAccessException, InstantiationException {
+    private HeadersCreator getHeadersCreator(HuaHeader huaHeader) {
         HeadersCreator creator;
         if (huaHeader != null) {
             Class<? extends HeadersCreator> clazz = huaHeader.creator();
             try {
                 creator = beanFactory.getBean(clazz);
             } catch (BeansException ignored) {
-                creator = huaHeader.creator().newInstance();
+                creator = new DefaultHeadersCreator();
             }
         } else {
             creator = new DefaultHeadersCreator();
@@ -97,14 +98,14 @@ public class HttpHandler implements InvocationHandler {
         return creator;
     }
 
-    private Converter<?> getConverter(HuaConvert huaConvert) throws IllegalAccessException, InstantiationException {
+    private Converter<?> getConverter(HuaConvert huaConvert) {
         Converter<?> converter;
         if (huaConvert != null) {
             Class<? extends Converter> clazz = huaConvert.value();
             try {
                 converter = beanFactory.getBean(clazz);
             } catch (BeansException ignored) {
-                converter = huaConvert.value().newInstance();
+                converter = new DefaultConverter();
             }
         } else {
             converter = new DefaultConverter();
@@ -112,13 +113,12 @@ public class HttpHandler implements InvocationHandler {
         return converter;
     }
 
-    private void mergeHeaders(HashMap<String, String> headers, HuaHeader huaHeader) throws IllegalAccessException, InstantiationException {
+    private void mergeHeaders(HashMap<String, String> headers, HuaHeader huaHeader) {
         if (huaHeader != null) {
             MapTool.merge(headers, getHeadersCreator(huaHeader).headers());
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
 
@@ -136,9 +136,9 @@ public class HttpHandler implements InvocationHandler {
         //region 获取切片方法
         HttpHandlerMethod aopMethod = null;
         if (httpHandlerConfig != null) {
-            HuaAop huaAop = interfaceClass.getAnnotation(HuaAop.class);
+            HuaAop huaAop = AnnotationUtils.getAnnotation(interfaceClass, HuaAop.class);
             if (huaAop == null) {
-                huaAop = method.getAnnotation(HuaAop.class);
+                huaAop = AnnotationUtils.getAnnotation(method, HuaAop.class);
             }
             if (huaAop != null) {
                 String methodName = getValue(huaAop.value());
@@ -156,18 +156,18 @@ public class HttpHandler implements InvocationHandler {
 
         //region 检查是否为表单类型
         boolean isForm = false;
-        HuaForm huaForm = method.getAnnotation(HuaForm.class);
+        HuaForm huaForm = AnnotationUtils.getAnnotation(method, HuaForm.class);
         if (huaForm != null) {
             isForm = huaForm.value();
         }
         //endregion
 
         //region 处理地址与请求方法
-        HuaHttp huaHttp = interfaceClass.getAnnotation(HuaHttp.class);
-        HuaGet huaGet = method.getAnnotation(HuaGet.class);
-        HuaPost huaPost = method.getAnnotation(HuaPost.class);
-        HuaPut huaPut = method.getAnnotation(HuaPut.class);
-        HuaDelete huaDelete = method.getAnnotation(HuaDelete.class);
+        HuaHttp huaHttp = AnnotationUtils.getAnnotation(interfaceClass, HuaHttp.class);
+        HuaGet huaGet = AnnotationUtils.getAnnotation(method, HuaGet.class);
+        HuaPost huaPost = AnnotationUtils.getAnnotation(method, HuaPost.class);
+        HuaPut huaPut = AnnotationUtils.getAnnotation(method, HuaPut.class);
+        HuaDelete huaDelete = AnnotationUtils.getAnnotation(method, HuaDelete.class);
         JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
         if (httpHandlerConfig != null) {
             jsonMan.setGson(httpHandlerConfig.getGson());
@@ -193,9 +193,9 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Token
-        HuaToken huaToken = interfaceClass.getAnnotation(HuaToken.class);
+        HuaToken huaToken = AnnotationUtils.getAnnotation(interfaceClass, HuaToken.class);
         if (huaToken == null) {
-            huaToken = method.getAnnotation(HuaToken.class);
+            huaToken = AnnotationUtils.getAnnotation(method, HuaToken.class);
         }
         if (huaToken != null) {
             String key = getValue(huaToken.key());
@@ -212,7 +212,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Headers
-        HuaHeader typeHeader = interfaceClass.getAnnotation(HuaHeader.class);
+        HuaHeader typeHeader = AnnotationUtils.getAnnotation(interfaceClass, HuaHeader.class);
         if (typeHeader != null) {
             String[] names = typeHeader.names();
             String[] values = typeHeader.values();
@@ -229,7 +229,7 @@ public class HttpHandler implements InvocationHandler {
             mergeHeaders(headers, typeHeader);
         }
 
-        HuaHeader methodHeader = method.getAnnotation(HuaHeader.class);
+        HuaHeader methodHeader = AnnotationUtils.getAnnotation(method, HuaHeader.class);
         if (methodHeader != null) {
             String[] names = methodHeader.names();
             String[] values = methodHeader.values();
@@ -248,7 +248,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Params
-        HuaParam methodParam = method.getAnnotation(HuaParam.class);
+        HuaParam methodParam = AnnotationUtils.getAnnotation(method, HuaParam.class);
         if (methodParam != null) {
             String[] names = methodParam.names();
             String[] values = methodParam.values();
@@ -262,7 +262,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Bodies
-        HuaBody methodBody = method.getAnnotation(HuaBody.class);
+        HuaBody methodBody = AnnotationUtils.getAnnotation(method, HuaBody.class);
         if (methodBody != null) {
             String[] names = methodBody.names();
             String[] values = methodBody.values();
@@ -276,7 +276,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 Paths
-        HuaPath methodPath = method.getAnnotation(HuaPath.class);
+        HuaPath methodPath = AnnotationUtils.getAnnotation(method, HuaPath.class);
         if (methodPath != null) {
             String[] names = methodPath.names();
             String[] values = methodPath.values();
@@ -298,10 +298,10 @@ public class HttpHandler implements InvocationHandler {
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
             Object arg = args[i];
-            HuaParam huaParam = parameter.getAnnotation(HuaParam.class);
-            HuaBody huaBody = parameter.getAnnotation(HuaBody.class);
-            HuaPath huaPath = parameter.getAnnotation(HuaPath.class);
-            HuaHeader huaHeader = parameter.getAnnotation(HuaHeader.class);
+            HuaParam huaParam = AnnotationUtils.getAnnotation(parameter, HuaParam.class);
+            HuaBody huaBody = AnnotationUtils.getAnnotation(parameter, HuaBody.class);
+            HuaPath huaPath = AnnotationUtils.getAnnotation(parameter, HuaPath.class);
+            HuaHeader huaHeader = AnnotationUtils.getAnnotation(parameter, HuaHeader.class);
             //region 处理参数名与参数值转换
             String paramName = parameter.getName();
             String paramMethodName = "";
@@ -413,7 +413,7 @@ public class HttpHandler implements InvocationHandler {
 
         //region 处理返回值
         String resultString = response.body();
-        HuaConvert huaConvert = method.getAnnotation(HuaConvert.class);
+        HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
         Object resultObject = getConverter(huaConvert).convert(resultString, method.getGenericReturnType(), jsonMan);
         //endregion
 
