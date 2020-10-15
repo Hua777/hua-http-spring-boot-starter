@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.1.7-RELEASE</version>
+    <version>1.1.8-RELEASE</version>
 </dependency>
 ```
 
@@ -322,6 +322,7 @@ public interface TestHttp {
 在定義轉換器
 
 ```java
+@Configuration
 public class CuteConverter implements Converter<CuteComplex> {
     @Override
     public CuteComplex convert(String responseBody, Type returnType, JsonMan jsonMan) {
@@ -352,6 +353,7 @@ public interface TestHttp {
 ```
 
 ```java
+@Configuration
 public class MyHeaderCreator implements HeadersCreator {
 
     @Override
@@ -375,6 +377,18 @@ public interface TestHttp {
      */
     @HuaGet(url = "/download")
     InputStream download();
+
+    /*
+     * http get http://hello-world.com/stream
+     */
+    @HuaStream(
+        bufferSize = 1024, // 依次读取大小
+        endCharacter = "\n", // 获取数据时根据此字符串拆分成 XXX 给您
+        limit = DefaultStreamLimit.class // 重要：请务必自定义获取数据总量的方法
+        // 预设使用 response headers 内的 USER-DEFINED-DATA-COUNT 字段
+    )
+    @HuaGet(url = "/stream")
+    Stream<XXX> stream();
 
 }
 ```

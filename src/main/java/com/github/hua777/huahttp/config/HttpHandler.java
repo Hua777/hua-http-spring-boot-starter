@@ -18,6 +18,9 @@ import com.github.hua777.huahttp.config.convert.Converter;
 import com.github.hua777.huahttp.config.convert.DefaultConverter;
 import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
 import com.github.hua777.huahttp.config.creator.HeadersCreator;
+import com.github.hua777.huahttp.config.stream.DefaultStreamLimit;
+import com.github.hua777.huahttp.config.stream.InputStreamSupplier;
+import com.github.hua777.huahttp.config.stream.StreamLimit;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.MapTool;
 import com.github.hua777.huahttp.tool.ReflectTool;
@@ -36,6 +39,7 @@ import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class HttpHandler implements InvocationHandler {
 
@@ -113,6 +117,21 @@ public class HttpHandler implements InvocationHandler {
             converter = new DefaultConverter();
         }
         return converter;
+    }
+
+    private StreamLimit getStreamLimit(HuaStream huaStream) {
+        StreamLimit limit;
+        if (huaStream != null) {
+            Class<? extends StreamLimit> clazz = huaStream.limit();
+            try {
+                limit = beanFactory.getBean(clazz);
+            } catch (BeansException ignored) {
+                limit = new DefaultStreamLimit();
+            }
+        } else {
+            limit = new DefaultStreamLimit();
+        }
+        return limit;
     }
 
     private void mergeHeaders(HashMap<String, String> headers, HuaHeader huaHeader) {
@@ -379,6 +398,9 @@ public class HttpHandler implements InvocationHandler {
         // 是否返回串流
         boolean isReturnInputStream = ReflectTool.fromClass(method.getReturnType(), InputStream.class);
 
+        // 是否返回流
+        boolean isReturnStream = ReflectTool.isClass(method.getReturnType(), Stream.class);
+
         //region 发送请求
         HttpRequest req = (new HttpRequest(fullUrl)).method(httpMethod);
         switch (httpMethod) {
@@ -411,7 +433,7 @@ public class HttpHandler implements InvocationHandler {
 
         HttpResponse response;
 
-        if (isReturnInputStream) {
+        if (isReturnInputStream || isReturnStream) {
             response = req.executeAsync();
         } else {
             response = req.execute();
@@ -426,6 +448,16 @@ public class HttpHandler implements InvocationHandler {
         //region 处理返回值
         if (isReturnInputStream) {
             return response.bodyStream();
+        } else if (isReturnStream) {
+            HuaStream huaStream = AnnotationUtils.getAnnotation(method, HuaStream.class);
+            InputStreamSupplier supplier = new InputStreamSupplier(
+                    huaStream,
+                    ReflectTool.getActualTypes(method.getGenericReturnType())[0],
+                    jsonMan,
+                    response.bodyStream()
+            );
+            StreamLimit streamLimit = getStreamLimit(huaStream);
+            return Stream.generate(supplier).limit(streamLimit.getDataCount(response));
         } else {
             HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
             return getConverter(huaConvert).convert(response.body(), method.getGenericReturnType(), jsonMan);
