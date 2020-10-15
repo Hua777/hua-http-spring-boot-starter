@@ -20,6 +20,7 @@ import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
 import com.github.hua777.huahttp.config.creator.HeadersCreator;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.MapTool;
+import com.github.hua777.huahttp.tool.ReflectTool;
 import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 
+import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -129,7 +131,7 @@ public class HttpHandler implements InvocationHandler {
         HashMap<String, Object> bodies = new HashMap<>();
         HashMap<String, String> paths = new HashMap<>();
 
-        String baseUrl = "";
+        String baseUrl;
         String subUrl = "";
         String fullUrl;
 
@@ -168,6 +170,7 @@ public class HttpHandler implements InvocationHandler {
         HuaPost huaPost = AnnotationUtils.getAnnotation(method, HuaPost.class);
         HuaPut huaPut = AnnotationUtils.getAnnotation(method, HuaPut.class);
         HuaDelete huaDelete = AnnotationUtils.getAnnotation(method, HuaDelete.class);
+        assert huaHttp != null;
         JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
         if (httpHandlerConfig != null) {
             jsonMan.setGson(httpHandlerConfig.getGson());
@@ -373,6 +376,9 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
+        // 是否返回串流
+        boolean isReturnInputStream = ReflectTool.fromClass(method.getReturnType(), InputStream.class);
+
         //region 发送请求
         HttpRequest req = (new HttpRequest(fullUrl)).method(httpMethod);
         switch (httpMethod) {
@@ -403,7 +409,13 @@ public class HttpHandler implements InvocationHandler {
 
         aopMethod.beforeHttpMethod(request);
 
-        HttpResponse response = request.execute();
+        HttpResponse response;
+
+        if (isReturnInputStream) {
+            response = req.executeAsync();
+        } else {
+            response = req.execute();
+        }
 
         if (!response.isOk()) {
             log.error("请求不成功！返回状态码：{}，返回内容：{}", response.getStatus(), response.body());
@@ -412,11 +424,12 @@ public class HttpHandler implements InvocationHandler {
         aopMethod.afterHttpMethod(response);
 
         //region 处理返回值
-        String resultString = response.body();
-        HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
-        Object resultObject = getConverter(huaConvert).convert(resultString, method.getGenericReturnType(), jsonMan);
+        if (isReturnInputStream) {
+            return response.bodyStream();
+        } else {
+            HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
+            return getConverter(huaConvert).convert(response.body(), method.getGenericReturnType(), jsonMan);
+        }
         //endregion
-
-        return resultObject;
     }
 }

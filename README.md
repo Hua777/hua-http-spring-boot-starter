@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.1.6-RELEASE</version>
+    <version>1.1.7-RELEASE</version>
 </dependency>
 ```
 
@@ -360,6 +360,21 @@ public class MyHeaderCreator implements HeadersCreator {
             put("key", "value");
         }};
     }
+
+}
+```
+
+### 返回流（InputStream）
+
+```java
+@HuaHttp("http://hello-world.com")
+public interface TestHttp {
+
+    /*
+     * http get http://hello-world.com/download
+     */
+    @HuaGet(url = "/download")
+    InputStream download();
 
 }
 ```
