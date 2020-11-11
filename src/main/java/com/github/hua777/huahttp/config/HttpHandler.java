@@ -455,7 +455,6 @@ public class HttpHandler implements InvocationHandler {
             StreamLimit streamLimit = getStreamLimit(huaStream);
             long count = streamLimit.getDataCount(response);
             InputStreamSupplier supplier = new InputStreamSupplier(
-                    count,
                     ReflectTool.getActualTypes(method.getGenericReturnType())[0],
                     jsonMan,
                     response.bodyStream()

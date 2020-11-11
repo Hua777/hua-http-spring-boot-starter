@@ -9,6 +9,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class InputStreamSupplier implements Supplier<Object> {
@@ -16,41 +19,51 @@ public class InputStreamSupplier implements Supplier<Object> {
     static Logger log = LoggerFactory.getLogger(InputStreamSupplier.class);
 
     public InputStreamSupplier(
-            long count,
             Type actualType,
             JsonMan jsonMan,
             InputStream inputStream
     ) {
-        this.count = count;
         this.actualType = actualType;
         this.jsonMan = jsonMan;
-        this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+
+        new Thread(() -> {
+            BufferedReader bufferedReader = null;
+            try {
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    dataQueue.offer(line);
+                }
+            } catch (Exception ex) {
+                log.error("流读取错误！", ex);
+            } finally {
+                if (bufferedReader != null) {
+                    try {
+                        bufferedReader.close();
+                    } catch (Exception ex) {
+                        log.error("无法关闭流！", ex);
+                    }
+                }
+            }
+        }).start();
+
     }
 
-    long count;
     Type actualType;
     JsonMan jsonMan;
-    BufferedReader bufferedReader;
 
-    long currentCount = 0;
+    Queue<String> dataQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public synchronized Object get() {
-        if (bufferedReader == null) {
-            throw new RuntimeException("读取早已经结束！");
-        }
-        String line;
-        try {
-            line = bufferedReader.readLine();
-            if (line == null) {
-                bufferedReader.close();
-                bufferedReader = null;
+        while (dataQueue.size() <= 0) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(200);
+            } catch (Exception ignored) {
+
             }
-            currentCount += 1;
-        } catch (Exception ex) {
-            log.error("读取第 " + currentCount + " 条时出错！", ex);
-            throw new RuntimeException(ex);
         }
+        String line = dataQueue.poll();
         return jsonMan.fromJson(line, actualType);
     }
 }
