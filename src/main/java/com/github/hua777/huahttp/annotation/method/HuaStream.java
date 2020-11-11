@@ -9,10 +9,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface HuaStream {
-
-    int bufferSize() default 1024;
-
-    String endCharacter() default "\n";
-
     Class<? extends StreamLimit> limit() default DefaultStreamLimit.class;
 }

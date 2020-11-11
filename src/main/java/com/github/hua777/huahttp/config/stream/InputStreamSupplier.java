@@ -1,79 +1,56 @@
 package com.github.hua777.huahttp.config.stream;
 
-import com.github.hua777.huahttp.annotation.method.HuaStream;
 import com.github.hua777.huahttp.bean.JsonMan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 
 public class InputStreamSupplier implements Supplier<Object> {
 
+    static Logger log = LoggerFactory.getLogger(InputStreamSupplier.class);
+
     public InputStreamSupplier(
-            HuaStream huaStream,
+            long count,
             Type actualType,
             JsonMan jsonMan,
             InputStream inputStream
     ) {
-        if (huaStream != null) {
-            this.bufferSize = huaStream.bufferSize();
-            this.endCharacter = huaStream.endCharacter();
-        }
+        this.count = count;
         this.actualType = actualType;
         this.jsonMan = jsonMan;
-        this.inputStream = new BufferedInputStream(inputStream);
-        data = new byte[this.bufferSize];
+        this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
     }
 
-    int bufferSize = 1024;
-    String endCharacter = "\n";
+    long count;
     Type actualType;
     JsonMan jsonMan;
-    BufferedInputStream inputStream;
+    BufferedReader bufferedReader;
 
-    byte[] data;
-
-    StringBuilder prevStringBuilder = new StringBuilder();
+    long currentCount = 0;
 
     @Override
     public synchronized Object get() {
+        if (bufferedReader == null) {
+            throw new RuntimeException("读取早已经结束！");
+        }
+        String line;
         try {
-            if (inputStream == null) {
-                return null;
+            line = bufferedReader.readLine();
+            if (line == null) {
+                bufferedReader.close();
+                bufferedReader = null;
             }
-            Object result = checkPrevStringBuilder();
-            if (result != null) {
-                return result;
-            }
-            while (true) {
-                int realLength = inputStream.read(data);
-                if (realLength == -1) {
-                    inputStream.close();
-                    inputStream = null;
-                    break;
-                }
-                prevStringBuilder.append(new String(data, 0, realLength));
-                result = checkPrevStringBuilder();
-                if (result != null) {
-                    return result;
-                }
-            }
-            return jsonMan.fromJson(prevStringBuilder.toString(), actualType);
+            currentCount += 1;
         } catch (Exception ex) {
+            log.error("读取第 " + currentCount + " 条时出错！", ex);
             throw new RuntimeException(ex);
         }
-    }
-
-    private Object checkPrevStringBuilder() {
-        String prevString = prevStringBuilder.toString();
-        if (prevString.contains(endCharacter)) {
-            int index = prevString.indexOf(endCharacter);
-            String result = prevString.substring(0, index);
-            prevStringBuilder.setLength(0);
-            prevStringBuilder.append(prevString.substring(index + endCharacter.length()));
-            return jsonMan.fromJson(result, actualType);
-        }
-        return null;
+        return jsonMan.fromJson(line, actualType);
     }
 }

@@ -401,8 +401,12 @@ public class HttpHandler implements InvocationHandler {
         // 是否返回流
         boolean isReturnStream = ReflectTool.isClass(method.getReturnType(), Stream.class);
 
-        //region 发送请求
-        HttpRequest req = (new HttpRequest(fullUrl)).method(httpMethod);
+        //region 创建请求
+        HttpRequest req = (new HttpRequest(fullUrl))
+                .method(httpMethod)
+                .timeout(httpProperty.getHttpTimeoutSeconds() * 1000)
+                .addHeaders(headers)
+                .setFollowRedirects(httpProperty.getHttpRedirects());
         switch (httpMethod) {
             case POST:
             case PUT:
@@ -423,21 +427,19 @@ public class HttpHandler implements InvocationHandler {
                 }
                 break;
         }
-        HttpRequest request = req
-                .timeout(httpProperty.getHttpTimeoutSeconds() * 1000)
-                .addHeaders(headers)
-                .setFollowRedirects(httpProperty.getHttpRedirects());
         //endregion
 
-        aopMethod.beforeHttpMethod(request);
+        aopMethod.beforeHttpMethod(req);
 
         HttpResponse response;
 
+        //region 发送请求
         if (isReturnInputStream || isReturnStream) {
             response = req.executeAsync();
         } else {
             response = req.execute();
         }
+        //endregion
 
         if (!response.isOk()) {
             log.error("请求不成功！返回状态码：{}，返回内容：{}", response.getStatus(), response.body());
@@ -450,14 +452,15 @@ public class HttpHandler implements InvocationHandler {
             return response.bodyStream();
         } else if (isReturnStream) {
             HuaStream huaStream = AnnotationUtils.getAnnotation(method, HuaStream.class);
+            StreamLimit streamLimit = getStreamLimit(huaStream);
+            long count = streamLimit.getDataCount(response);
             InputStreamSupplier supplier = new InputStreamSupplier(
-                    huaStream,
+                    count,
                     ReflectTool.getActualTypes(method.getGenericReturnType())[0],
                     jsonMan,
                     response.bodyStream()
             );
-            StreamLimit streamLimit = getStreamLimit(huaStream);
-            return Stream.generate(supplier).limit(streamLimit.getDataCount(response));
+            return Stream.generate(supplier).limit(count);
         } else {
             HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
             return getConverter(huaConvert).convert(response.body(), method.getGenericReturnType(), jsonMan);

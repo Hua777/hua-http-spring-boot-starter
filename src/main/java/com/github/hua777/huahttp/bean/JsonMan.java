@@ -17,6 +17,9 @@ public class JsonMan {
 
     @SuppressWarnings("unchecked")
     public <T> T fromJson(String object, Type type) {
+        if (object == null) {
+            return null;
+        }
         String[] classNames = type.getTypeName().split("\\.");
         String typeName = classNames[classNames.length - 1];
         if (typeName.equals("Void") || typeName.equals("void")) {
