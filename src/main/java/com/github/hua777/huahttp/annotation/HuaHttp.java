@@ -11,4 +11,6 @@ public @interface HuaHttp {
     String value() default "";
 
     JsonType jsonType() default JsonType.FastJson;
+
+    boolean throwException() default false;
 }

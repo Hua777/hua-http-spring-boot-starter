@@ -1,6 +1,7 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.property.HttpProperty;
+import com.github.hua777.huahttp.property.HttpPropertyExtend;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +52,15 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor,
 
     @Override
     public void postProcessBeanDefinitionRegistry(@NotNull BeanDefinitionRegistry registry) throws BeansException {
-        List<String> defaultScanPackages = AutoConfigurationPackages.get(this.beanFactory);
+        List<String> defaultScanPackages = AutoConfigurationPackages.get(beanFactory);
         if (httpProperty.getScanPackages() != null) {
             defaultScanPackages.addAll(Arrays.asList(httpProperty.getScanPackages().split(",")));
+        }
+        try {
+            HttpPropertyExtend httpPropertyExtend = beanFactory.getBean(HttpPropertyExtend.class);
+            defaultScanPackages.addAll(httpPropertyExtend.getMoreScanPackages());
+        } catch (Exception ignored) {
+
         }
         HttpScanner scanner = new HttpScanner(registry);
         scanner.setEnvironment(environment);
