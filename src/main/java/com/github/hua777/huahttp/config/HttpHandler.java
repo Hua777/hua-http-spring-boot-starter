@@ -402,7 +402,7 @@ public class HttpHandler implements InvocationHandler {
         boolean isReturnStream = ReflectTool.isClass(method.getReturnType(), Stream.class);
 
         //region 创建请求
-        HttpRequest req = (new HttpRequest(fullUrl))
+        HttpRequest request = (new HttpRequest(fullUrl))
                 .method(httpMethod)
                 .timeout(httpProperty.getHttpTimeoutSeconds() * 1000)
                 .addHeaders(headers)
@@ -411,38 +411,42 @@ public class HttpHandler implements InvocationHandler {
             case POST:
             case PUT:
                 if (isForm) {
-                    req = req.contentType("application/x-www-form-urlencoded");
+                    request = request.contentType("application/x-www-form-urlencoded");
                     if (bodyIsFull) {
-                        req = req.form(MapTool.toMap(bodies.get(bodyFullKey)));
+                        request = request.form(MapTool.toMap(bodies.get(bodyFullKey)));
                     } else {
-                        req = req.form(bodies);
+                        request = request.form(bodies);
                     }
                 } else {
-                    req = req.contentType("application/json");
+                    request = request.contentType("application/json");
                     if (bodyIsFull) {
-                        req = req.body(jsonMan.toJson(bodies.get(bodyFullKey)));
+                        request = request.body(jsonMan.toJson(bodies.get(bodyFullKey)));
                     } else {
-                        req = req.body(jsonMan.toJson(bodies));
+                        request = request.body(jsonMan.toJson(bodies));
                     }
                 }
                 break;
         }
         //endregion
 
-        aopMethod.beforeHttpMethod(req);
+        aopMethod.beforeHttpMethod(request);
 
         HttpResponse response;
 
         //region 发送请求
         if (isReturnInputStream || isReturnStream) {
-            response = req.executeAsync();
+            response = request.executeAsync();
         } else {
-            response = req.execute();
+            response = request.execute();
         }
         //endregion
 
         if (!response.isOk()) {
-            log.error("请求不成功！返回状态码：{}，返回内容：{}", response.getStatus(), response.body());
+            if (huaHttp.throwException()) {
+                throw new Exception(response.body());
+            } else {
+                log.error("请求不成功！返回状态码：{}，返回内容：{}，请求地址：{}", response.getStatus(), response.body(), request.getUrl());
+            }
         }
 
         aopMethod.afterHttpMethod(response);
