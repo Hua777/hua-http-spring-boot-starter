@@ -6,7 +6,7 @@
 
     <groupId>com.bw.ae.iot</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.3.0.1-SNAPSHOT</version>
+    <version>1.3.0.2-SNAPSHOT</version>
 
     <distributionManagement>
         <repository>

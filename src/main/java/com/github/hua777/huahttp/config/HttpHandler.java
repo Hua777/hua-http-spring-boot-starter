@@ -443,7 +443,7 @@ public class HttpHandler implements InvocationHandler {
 
         if (!response.isOk()) {
             if (huaHttp.throwException()) {
-                throw new Exception(response.body());
+                throw new RuntimeException(response.body());
             } else {
                 log.error("请求不成功！返回状态码：{}，返回内容：{}，请求地址：{}", response.getStatus(), response.body(), request.getUrl());
             }
