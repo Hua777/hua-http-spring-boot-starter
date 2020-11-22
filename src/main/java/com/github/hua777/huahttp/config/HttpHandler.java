@@ -1,5 +1,6 @@
 package com.github.hua777.huahttp.config;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -38,6 +39,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -358,6 +361,11 @@ public class HttpHandler implements InvocationHandler {
                     paramIsFull = true;
                     paramFullKey = paramName;
                 }
+                if (arg instanceof LocalDateTime) {
+                    arg = DateUtil.format((LocalDateTime) arg, httpProperty.getParamDateFormat());
+                } else if (arg instanceof Date) {
+                    arg = DateUtil.format((Date) arg, httpProperty.getParamDateFormat());
+                }
                 params.put(paramName, arg);
             } else if (huaBody != null) {
                 if (huaBody.full()) {
@@ -376,6 +384,11 @@ public class HttpHandler implements InvocationHandler {
                 if (huaPost != null || huaPut != null) {
                     bodies.put(paramName, arg);
                 } else {
+                    if (arg instanceof LocalDateTime) {
+                        arg = DateUtil.format((LocalDateTime) arg, httpProperty.getParamDateFormat());
+                    } else if (arg instanceof Date) {
+                        arg = DateUtil.format((Date) arg, httpProperty.getParamDateFormat());
+                    }
                     params.put(paramName, arg);
                 }
             }
@@ -431,6 +444,8 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         aopMethod.beforeHttpMethod(request);
+
+        log.info(request.toString());
 
         HttpResponse response;
 
