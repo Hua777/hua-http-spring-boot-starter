@@ -445,8 +445,6 @@ public class HttpHandler implements InvocationHandler {
 
         aopMethod.beforeHttpMethod(request);
 
-        log.info(request.toString());
-
         HttpResponse response;
 
         //region 发送请求
