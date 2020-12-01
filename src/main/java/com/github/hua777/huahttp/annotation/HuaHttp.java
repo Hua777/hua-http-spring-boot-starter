@@ -12,8 +12,4 @@ public @interface HuaHttp {
 
     JsonType jsonType() default JsonType.FastJson;
 
-    boolean throwException() default false;
-
-    Class<? extends RuntimeException> useException() default RuntimeException.class;
-
 }

@@ -32,7 +32,6 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -434,20 +433,6 @@ public class HttpHandler implements InvocationHandler {
             response = request.execute();
         }
         //endregion
-
-        if (!response.isOk()) {
-            if (huaHttp.throwException()) {
-                Constructor<? extends RuntimeException> constructor =
-                        MapTool.RUNTIME_EXCEPTION_CONSTRUCTORS.getOrDefault(huaHttp.useException(), null);
-                if (constructor == null) {
-                    constructor = huaHttp.useException().getDeclaredConstructor(String.class);
-                    MapTool.RUNTIME_EXCEPTION_CONSTRUCTORS.put(huaHttp.useException(), constructor);
-                }
-                throw constructor.newInstance(response.body());
-            } else {
-                log.error("请求不成功！返回状态码：{}，返回内容：{}，请求地址：{}", response.getStatus(), response.body(), request.getUrl());
-            }
-        }
 
         aopMethod.afterHttpMethod(response);
 
