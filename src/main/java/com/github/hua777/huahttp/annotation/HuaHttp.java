@@ -15,4 +15,5 @@ public @interface HuaHttp {
     boolean throwException() default false;
 
     Class<? extends RuntimeException> useException() default RuntimeException.class;
+
 }

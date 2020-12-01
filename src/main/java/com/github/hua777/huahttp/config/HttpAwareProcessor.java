@@ -2,6 +2,7 @@ package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.aware.HuaHttpHandlerConfigAware;
 import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.aop.HttpHandlerSetting;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,10 @@ public class HttpAwareProcessor implements BeanFactoryPostProcessor {
     @Override
     public void postProcessBeanFactory(@NotNull ConfigurableListableBeanFactory configurableListableBeanFactory) throws BeansException {
         //region HttpHandlerConfig
-        HttpHandlerConfig httpHandlerConfig = null;
+        HttpHandlerConfig httpHandlerConfig = HttpHandlerSetting::new;
         for (Map.Entry<String, HttpHandlerConfig> targetEntry :
                 configurableListableBeanFactory.getBeansOfType(HttpHandlerConfig.class).entrySet()) {
-            httpHandlerConfig = targetEntry.getValue();
+            httpHandlerConfig.getSetting().addOtherSetting(targetEntry.getValue().getSetting());
         }
         for (Map.Entry<String, HuaHttpHandlerConfigAware> awareEntry :
                 configurableListableBeanFactory.getBeansOfType(HuaHttpHandlerConfigAware.class).entrySet()) {

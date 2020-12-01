@@ -15,8 +15,6 @@ import com.github.hua777.huahttp.annotation.param.HuaPath;
 import com.github.hua777.huahttp.bean.JsonMan;
 import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
-import com.github.hua777.huahttp.config.convert.Converter;
-import com.github.hua777.huahttp.config.convert.DefaultConverter;
 import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
 import com.github.hua777.huahttp.config.creator.HeadersCreator;
 import com.github.hua777.huahttp.config.stream.DefaultStreamLimit;
@@ -108,21 +106,6 @@ public class HttpHandler implements InvocationHandler {
         return creator;
     }
 
-    private Converter<?> getConverter(HuaConvert huaConvert) {
-        Converter<?> converter;
-        if (huaConvert != null) {
-            Class<? extends Converter> clazz = huaConvert.value();
-            try {
-                converter = beanFactory.getBean(clazz);
-            } catch (BeansException ignored) {
-                converter = new DefaultConverter();
-            }
-        } else {
-            converter = new DefaultConverter();
-        }
-        return converter;
-    }
-
     private StreamLimit getStreamLimit(HuaStream huaStream) {
         StreamLimit limit;
         if (huaStream != null) {
@@ -195,9 +178,7 @@ public class HttpHandler implements InvocationHandler {
         HuaDelete huaDelete = AnnotationUtils.getAnnotation(method, HuaDelete.class);
         assert huaHttp != null;
         JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
-        if (httpHandlerConfig != null) {
-            jsonMan.setGson(httpHandlerConfig.getGson());
-        }
+        jsonMan.setGson(httpHandlerConfig.getSetting().getGson());
         baseUrl = getValue(huaHttp.value());
         if (huaGet != null) {
             subUrl = getValue(huaGet.url());
@@ -485,8 +466,9 @@ public class HttpHandler implements InvocationHandler {
             );
             return Stream.generate(supplier).limit(count);
         } else {
-            HuaConvert huaConvert = AnnotationUtils.getAnnotation(method, HuaConvert.class);
-            return getConverter(huaConvert).convert(response.body(), method.getGenericReturnType(), jsonMan);
+            String resultString = response.body();
+            resultString = aopMethod.preHandleResponse(resultString, jsonMan);
+            return jsonMan.fromJson(resultString, method.getGenericReturnType());
         }
         //endregion
     }
