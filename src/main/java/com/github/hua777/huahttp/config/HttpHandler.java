@@ -178,7 +178,6 @@ public class HttpHandler implements InvocationHandler {
         HuaDelete huaDelete = AnnotationUtils.getAnnotation(method, HuaDelete.class);
         assert huaHttp != null;
         JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
-        jsonMan.setGson(httpHandlerConfig.getSetting().getGson());
         baseUrl = getValue(huaHttp.value());
         if (huaGet != null) {
             subUrl = getValue(huaGet.url());
