@@ -219,7 +219,7 @@ public interface TestHttp {
 }
 ```
 
-### 自定義請求上下文（預設）
+### 自定義請求上下文
 
 ```java
 @Configuration
@@ -227,7 +227,7 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
     @Override
     public HttpHandlerSetting getSetting() {
         HttpHandlerSetting setting = new HttpHandlerSetting();
-        setting.addMethod("BILL_ENGINE_CLIENT_CORE_HTTP_HANDLER", new HttpHandlerMethod() {
+        setting.addMethod("please_tag_me", new HttpHandlerMethod() {
 
             final ThreadLocal<String> tlUrl = new ThreadLocal<>();
 
@@ -267,54 +267,16 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
 ```
 
 ```java
-@HuaAop
+@HuaAop("please_tag_me")
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaAop
+    @HuaAop("please_tag_me")
     @HuaGet(url = "/get/hello/world")
-    String getHelloWorld(String hello);
-}
-```
-
-### 自定義請求上下文（指定）
-
-```java
-@Configuration
-public class MyHttpHandlerConfig implements HttpHandlerConfig {
-    @Override
-    public HttpHandlerSetting getSetting() {
-        HttpHandlerSetting setting = new HttpHandlerSetting();
-        setting.addMethod("pleaseTagMe", new HttpHandlerMethod<YourBean>() {
-            @Override
-            public void beforeHttpMethod(HttpRequest request) {
-
-            }
-
-            @Override
-            public void afterHttpMethod(HttpResponse response) {
-
-            }
-        });
-        return setting;
-    }
-}
-```
-
-```java
-@HuaAop("pleaseTagMe")
-@HuaHttp("http://hello-world.com")
-public interface TestHttp {
-
-    /*
-     * http get http://hello-world.com/get/hello/world?hello=xxx
-     */
-    @HuaAop("pleaseTagMe")
-    @HuaGet(url = "/get/hello/world")
-    String getHelloWorld(String hello);
+    Happy getHelloWorld(String hello);
 }
 ```
 
