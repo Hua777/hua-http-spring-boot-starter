@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.3.0-RELEASE</version>
+    <version>1.4.0-RELEASE</version>
 </dependency>
 ```
 
@@ -293,47 +293,6 @@ public interface TestHttp {
     String getHelloWorld(String hello);
 }
 ```
-
-### 使用轉換器
-
-有個接口定義如下，返回復數
-
-```java
-@PostMapping("/test")
-public Response<Complex> testPost(@RequestBody Complex complex) {
-    return new Response<>(complex);
-}
-```
-
-妳想把請求這個接口返回的復數轉成可愛的復數，並且不含 Response
-
-先定義請求接口
-
-```java
-@HuaHttp("xxx")
-public interface TestHttp {
-
-    @HuaConvert(CuteConverter.class) // 定義轉換器類
-    @HuaPost(url = "/test")
-    CuteComplex getHelloWorld(Complex complex);
-}
-```
-
-在定義轉換器
-
-```java
-@Configuration
-public class CuteConverter implements Converter<CuteComplex> {
-    @Override
-    public CuteComplex convert(String responseBody, Type returnType, JsonMan jsonMan) {
-        Response<Complex> resp = jsonMan.fromJson(responseBody, new TypeReference<Response<Complex>>(){}.getType());
-        CuteComplex complex = new CuteComplex(resp.getData().getReal(), resp.getData().getImage());
-        return complex;
-    }
-}
-```
-
-完成
 
 ### 動態 Header
 
