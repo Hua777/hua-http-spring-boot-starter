@@ -1,7 +1,6 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.annotation.HuaHttp;
-import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,14 +17,8 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
 
     static Logger log = LoggerFactory.getLogger(HttpScanner.class);
 
-    HttpProperty httpProperty;
-
     public HttpScanner(BeanDefinitionRegistry registry) {
         super(registry);
-    }
-
-    public void setHttpProperty(HttpProperty httpProperty) {
-        this.httpProperty = httpProperty;
     }
 
     @Override
@@ -44,8 +37,6 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
             definition.getConstructorArgumentValues().addGenericArgumentValue(definition.getBeanClassName());
             definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
             definition.setBeanClass(HuaHttpFactory.class);
-            definition.getPropertyValues().add("environment", getEnvironment());
-            definition.getPropertyValues().add("httpProperty", httpProperty);
         }
         return beanDefinitions;
     }

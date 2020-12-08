@@ -13,6 +13,7 @@ import com.github.hua777.huahttp.annotation.param.HuaHeader;
 import com.github.hua777.huahttp.annotation.param.HuaParam;
 import com.github.hua777.huahttp.annotation.param.HuaPath;
 import com.github.hua777.huahttp.bean.JsonMan;
+import com.github.hua777.huahttp.bean.ValueMan;
 import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
 import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
@@ -27,7 +28,7 @@ import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 
@@ -47,47 +48,22 @@ public class HttpHandler implements InvocationHandler {
     static Logger log = LoggerFactory.getLogger(HttpHandler.class);
 
     Class<?> interfaceClass;
+    ApplicationContext applicationContext;
 
     Environment environment;
     HttpProperty httpProperty;
     HttpHandlerConfig httpHandlerConfig;
-    BeanFactory beanFactory;
 
-    public HttpHandler() {
-    }
-
-    public HttpHandler setInterfaceClass(Class<?> interfaceClass) {
+    public HttpHandler(Class<?> interfaceClass, ApplicationContext applicationContext) {
         this.interfaceClass = interfaceClass;
-        return this;
-    }
-
-    public HttpHandler setEnvironment(Environment environment) {
-        this.environment = environment;
-        return this;
-    }
-
-    public HttpHandler setHttpProperty(HttpProperty httpProperty) {
-        this.httpProperty = httpProperty;
-        return this;
-    }
-
-    public HttpHandler setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
-        this.httpHandlerConfig = httpHandlerConfig;
-        return this;
-    }
-
-    public HttpHandler setBeanFactory(BeanFactory beanFactory) {
-        this.beanFactory = beanFactory;
-        return this;
+        this.applicationContext = applicationContext;
+        environment = applicationContext.getBean(Environment.class);
+        httpProperty = applicationContext.getBean(HttpProperty.class);
+        httpHandlerConfig = HttpHandlerConfig.fromBeanFactory(applicationContext);
     }
 
     private String getValue(String key) {
-        if (key.startsWith("${") && key.endsWith("}")) {
-            key = key.substring(2);
-            key = key.substring(0, key.length() - 1);
-            return environment.getProperty(key);
-        }
-        return key;
+        return ValueMan.parse(key).toString(environment);
     }
 
     private HeadersCreator getHeadersCreator(HuaHeader huaHeader) {
@@ -95,7 +71,7 @@ public class HttpHandler implements InvocationHandler {
         if (huaHeader != null) {
             Class<? extends HeadersCreator> clazz = huaHeader.creator();
             try {
-                creator = beanFactory.getBean(clazz);
+                creator = applicationContext.getBean(clazz);
             } catch (BeansException ignored) {
                 creator = new DefaultHeadersCreator();
             }
@@ -110,7 +86,7 @@ public class HttpHandler implements InvocationHandler {
         if (huaStream != null) {
             Class<? extends StreamLimit> clazz = huaStream.limit();
             try {
-                limit = beanFactory.getBean(clazz);
+                limit = applicationContext.getBean(clazz);
             } catch (BeansException ignored) {
                 limit = new DefaultStreamLimit();
             }

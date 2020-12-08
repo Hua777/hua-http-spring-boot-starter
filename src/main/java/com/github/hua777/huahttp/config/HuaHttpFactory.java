@@ -1,20 +1,16 @@
 package com.github.hua777.huahttp.config;
 
-import com.github.hua777.huahttp.aware.HuaHttpHandlerConfigAware;
-import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
-import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.core.env.Environment;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.Proxy;
 
-public class HuaHttpFactory<T> implements FactoryBean<T>, BeanFactoryAware, HuaHttpHandlerConfigAware {
+public class HuaHttpFactory<T> implements FactoryBean<T>, ApplicationContextAware {
 
     static Logger log = LoggerFactory.getLogger(HuaHttpFactory.class);
 
@@ -23,29 +19,11 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, BeanFactoryAware, HuaH
     }
 
     Class<T> interfaceClass;
-
-    Environment environment;
-    HttpProperty httpProperty;
-    HttpHandlerConfig httpHandlerConfig;
-
-    BeanFactory beanFactory;
-
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
-
-    public void setHttpProperty(HttpProperty httpProperty) {
-        this.httpProperty = httpProperty;
-    }
+    ApplicationContext applicationContext;
 
     @Override
-    public void setHttpHandlerConfig(HttpHandlerConfig httpHandlerConfig) {
-        this.httpHandlerConfig = httpHandlerConfig;
-    }
-
-    @Override
-    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
-        this.beanFactory = beanFactory;
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     @SuppressWarnings("unchecked")
@@ -55,12 +33,7 @@ public class HuaHttpFactory<T> implements FactoryBean<T>, BeanFactoryAware, HuaH
         long start = System.currentTimeMillis();
         T object = (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{
                 interfaceClass
-        }, new HttpHandler()
-                .setEnvironment(environment)
-                .setHttpProperty(httpProperty)
-                .setHttpHandlerConfig(httpHandlerConfig)
-                .setInterfaceClass(interfaceClass)
-                .setBeanFactory(beanFactory));
+        }, new HttpHandler(interfaceClass, applicationContext));
         long end = System.currentTimeMillis();
         log.info("HuaHttp 为您生产 Bean {}（{}s）", interfaceClass.getName(), ((end - start) / 1000.0F));
         return object;

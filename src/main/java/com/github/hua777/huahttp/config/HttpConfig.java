@@ -22,16 +22,8 @@ public class HttpConfig {
 
     @Bean
     @ConditionalOnMissingBean(HttpRegistry.class)
-    public static HttpRegistry httpRegistry(HttpProperty httpProperty) {
-        HttpRegistry registry = new HttpRegistry();
-        registry.setHttpProperty(httpProperty);
-        return registry;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(HttpAwareProcessor.class)
-    public static HttpAwareProcessor awareProcessor() {
-        return new HttpAwareProcessor();
+    public static HttpRegistry httpRegistry() {
+        return new HttpRegistry();
     }
 
 }

@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.4.0-RELEASE</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -28,6 +28,7 @@ com:
         scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
         http-timeout-seconds: 60 # 默認 60
         http-redirects: true # 默認 true
+        param-date-format: yyyy-MM-dd HH:mm:ss
 ```
 
 ## 教學
@@ -226,17 +227,40 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
     @Override
     public HttpHandlerSetting getSetting() {
         HttpHandlerSetting setting = new HttpHandlerSetting();
-        setting.defaultMethod(new HttpHandlerMethod<YourBean>() {
+        setting.addMethod("BILL_ENGINE_CLIENT_CORE_HTTP_HANDLER", new HttpHandlerMethod() {
+
+            final ThreadLocal<String> tlUrl = new ThreadLocal<>();
+
             @Override
             public void beforeHttpMethod(HttpRequest request) {
-
+                // 请求前操作
+                tlUrl.set(request.getUrl());
             }
 
             @Override
             public void afterHttpMethod(HttpResponse response) {
-
+                // 请求后操作
+                if (!response.isOk()) {
+                    log.error("请求地址 {} 不成功，返回内容为 {}！", tlUrl.get(), response.body());
+                }
             }
+
+            @Override
+            public String preHandleResponse(String originString, JsonMan jsonMan) {
+                // 请求结果预处理
+                // 假如函数接口返回值写的 Happy
+                // 真实返回值是 Response<Happy>
+                // 则透过此方法转换为 Happy
+                Response<String> response = jsonMan.fromJson(originString, new TypeReference<Response<String>>() {
+                }.getType());
+                if (response.getCode().equals(Response.ERROR)) {
+                    throw new RequestException(response.getMsg());
+                }
+                return response.getContent();
+            }
+
         });
+        setting.addMoreScanPackage("代码内写死额外的扫描包");
         return setting;
     }
 }
