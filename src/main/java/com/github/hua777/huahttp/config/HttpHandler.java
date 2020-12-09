@@ -111,10 +111,15 @@ public class HttpHandler implements InvocationHandler {
         //region 处理 类上的 Params
         Set<HuaParam> huaClassParams = AnnotatedElementUtils.findAllMergedAnnotations(interfaceClass, HuaParam.class);
         for (HuaParam huaParam : huaClassParams) {
+            Map<String, Object> param = params.get(huaParam.type());
+            for (int i = 0; i < huaParam.names().length; ++i) {
+                String tmpName = getValue(huaParam.names()[i]);
+                String tmpValue = getValue(huaParam.values()[i]);
+                param.put(tmpName, tmpValue);
+            }
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
             }
-            Map<String, Object> param = params.get(huaParam.type());
             MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
         }
         //endregion
@@ -122,10 +127,15 @@ public class HttpHandler implements InvocationHandler {
         //region 处理 函数上的 Params
         Set<HuaParam> huaMethodParams = AnnotatedElementUtils.findAllMergedAnnotations(method, HuaParam.class);
         for (HuaParam huaParam : huaMethodParams) {
+            Map<String, Object> param = params.get(huaParam.type());
+            for (int i = 0; i < huaParam.names().length; ++i) {
+                String tmpName = getValue(huaParam.names()[i]);
+                String tmpValue = getValue(huaParam.values()[i]);
+                param.put(tmpName, tmpValue);
+            }
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
             }
-            Map<String, Object> param = params.get(huaParam.type());
             MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
         }
         //endregion

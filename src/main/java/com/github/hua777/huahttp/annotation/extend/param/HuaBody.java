@@ -27,6 +27,12 @@ public @interface HuaBody {
     boolean full() default false;
 
     @AliasFor(annotation = HuaParam.class)
+    String[] names() default {};
+
+    @AliasFor(annotation = HuaParam.class)
+    String[] values() default {};
+
+    @AliasFor(annotation = HuaParam.class)
     Class<? extends Supplier<Map<String, Object>>> create() default DefaultParamCreator.class;
 
 }

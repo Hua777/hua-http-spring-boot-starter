@@ -28,6 +28,10 @@ public @interface HuaParam {
 
     //region 类、函数时使用
 
+    String[] names() default {};
+
+    String[] values() default {};
+
     Class<? extends Supplier<Map<String, Object>>> create() default DefaultParamCreator.class;
 
     //endregion
