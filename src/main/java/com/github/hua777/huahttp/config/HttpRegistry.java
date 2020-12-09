@@ -1,6 +1,6 @@
 package com.github.hua777.huahttp.config;
 
-import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
+import com.github.hua777.huahttp.config.harder.HttpHarder;
 import com.github.hua777.huahttp.property.HttpProperty;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -37,8 +37,8 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, Applic
 
         }
         try {
-            HttpHandlerConfig httpHandlerConfig = HttpHandlerConfig.merge();
-            defaultScanPackages.addAll(httpHandlerConfig.getSetting().getMoreScanPackages());
+            HttpHarder httpHarder = APP_CONTEXT.getBean(HttpHarder.class);
+            defaultScanPackages.addAll(httpHarder.getMoreScanPackages());
         } catch (Exception ignored) {
 
         }

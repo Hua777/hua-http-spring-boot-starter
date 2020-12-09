@@ -11,8 +11,6 @@ import com.github.hua777.huahttp.annotation.HuaMethod;
 import com.github.hua777.huahttp.annotation.HuaParam;
 import com.github.hua777.huahttp.bean.JsonMan;
 import com.github.hua777.huahttp.bean.ValueMan;
-import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
-import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
 import com.github.hua777.huahttp.config.converter.DefaultParamConverter;
 import com.github.hua777.huahttp.config.creator.DefaultParamCreator;
 import com.github.hua777.huahttp.config.limiter.InputStreamSupplier;
@@ -22,7 +20,7 @@ import com.github.hua777.huahttp.tool.MapTool;
 import com.github.hua777.huahttp.tool.ReflectTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
 
 import java.io.InputStream;
@@ -32,6 +30,7 @@ import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -48,10 +47,13 @@ public class HttpHandler implements InvocationHandler {
 
     static Environment environment = HttpRegistry.APP_CONTEXT.getBean(Environment.class);
     static HttpProperty httpProperty = HttpRegistry.APP_CONTEXT.getBean(HttpProperty.class);
-    static HttpHandlerConfig httpHandlerConfig = HttpHandlerConfig.merge();
 
     private static String getValue(String key) {
         return ValueMan.parse(key).toString(environment);
+    }
+
+    private static com.github.hua777.huahttp.config.handler.HttpHandler getHttpHandlerConfig(Class<?> type) {
+        return (com.github.hua777.huahttp.config.handler.HttpHandler) HttpRegistry.APP_CONTEXT.getBean(type);
     }
 
     @SuppressWarnings("unchecked")
@@ -83,29 +85,19 @@ public class HttpHandler implements InvocationHandler {
         String fullUrl;
 
         //region 获取切片方法
-        HttpHandlerMethod aopMethod = null;
-        if (httpHandlerConfig != null) {
-            HuaAop huaAop = AnnotationUtils.getAnnotation(interfaceClass, HuaAop.class);
-            if (huaAop == null) {
-                huaAop = AnnotationUtils.getAnnotation(method, HuaAop.class);
-            }
-            if (huaAop != null) {
-                String methodName = getValue(huaAop.value());
-                aopMethod = httpHandlerConfig.getSetting().getMethod(methodName);
-                if (aopMethod == null) {
-                    log.error("无法从配置文件中找到 {} 函数", methodName);
-                }
-            }
+        com.github.hua777.huahttp.config.handler.HttpHandler httpHandler = null;
+        HuaAop huaAop = AnnotatedElementUtils.findMergedAnnotation(method, HuaAop.class);
+        if (huaAop == null) {
+            huaAop = AnnotatedElementUtils.findMergedAnnotation(interfaceClass, HuaAop.class);
         }
-        if (aopMethod == null) {
-            aopMethod = new HttpHandlerMethod() {
-            };
+        if (huaAop != null) {
+            httpHandler = getHttpHandlerConfig(huaAop.value());
         }
         //endregion
 
         //region 处理地址与请求方法
-        HuaHttp huaHttp = AnnotationUtils.getAnnotation(interfaceClass, HuaHttp.class);
-        HuaMethod huaMethod = AnnotationUtils.getAnnotation(method, HuaMethod.class);
+        HuaHttp huaHttp = AnnotatedElementUtils.findMergedAnnotation(interfaceClass, HuaHttp.class);
+        HuaMethod huaMethod = AnnotatedElementUtils.findMergedAnnotation(method, HuaMethod.class);
         assert huaHttp != null;
         assert huaMethod != null;
         baseUrl = getValue(huaHttp.value());
@@ -117,7 +109,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 类上的 Params
-        HuaParam[] huaClassParams = interfaceClass.getAnnotationsByType(HuaParam.class);
+        Set<HuaParam> huaClassParams = AnnotatedElementUtils.findAllMergedAnnotations(interfaceClass, HuaParam.class);
         for (HuaParam huaParam : huaClassParams) {
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
@@ -128,7 +120,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         //region 处理 函数上的 Params
-        HuaParam[] huaMethodParams = method.getAnnotationsByType(HuaParam.class);
+        Set<HuaParam> huaMethodParams = AnnotatedElementUtils.findAllMergedAnnotations(method, HuaParam.class);
         for (HuaParam huaParam : huaMethodParams) {
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
@@ -142,7 +134,7 @@ public class HttpHandler implements InvocationHandler {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
-            HuaParam huaParam = AnnotationUtils.getAnnotation(parameter, HuaParam.class);
+            HuaParam huaParam = AnnotatedElementUtils.findMergedAnnotation(parameter, HuaParam.class);
             String paramName = getValue(parameter.getName());
             Object paramValue = args[i];
             if (huaParam != null) {
@@ -218,7 +210,9 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        aopMethod.beforeHttpMethod(request);
+        if (httpHandler != null) {
+            httpHandler.beforeHttpMethod(request);
+        }
 
         HttpResponse response;
 
@@ -230,7 +224,9 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        aopMethod.afterHttpMethod(response);
+        if (httpHandler != null) {
+            httpHandler.afterHttpMethod(response);
+        }
 
         //region 处理返回值
         if (isReturnInputStream) {
@@ -245,7 +241,9 @@ public class HttpHandler implements InvocationHandler {
             return Stream.generate(supplier).limit(count);
         } else {
             String resultString = response.body();
-            resultString = aopMethod.preHandleResponse(resultString);
+            if (httpHandler != null) {
+                resultString = httpHandler.preHandleResponse(resultString);
+            }
             return JsonMan.fromJson(resultString, method.getGenericReturnType());
         }
         //endregion

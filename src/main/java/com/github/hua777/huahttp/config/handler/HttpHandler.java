@@ -1,9 +1,10 @@
-package com.github.hua777.huahttp.config.aop;
+package com.github.hua777.huahttp.config.handler;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 
-public interface HttpHandlerMethod {
+public interface HttpHandler {
+
     default void beforeHttpMethod(HttpRequest request) {
     }
 
@@ -13,4 +14,5 @@ public interface HttpHandlerMethod {
     default String preHandleResponse(String originString) {
         return originString;
     }
+
 }

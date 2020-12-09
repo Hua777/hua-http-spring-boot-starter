@@ -7,13 +7,13 @@ import com.github.hua777.huahttp.config.limiter.DefaultStreamLimiter;
 import java.lang.annotation.*;
 import java.util.function.Function;
 
-@Target({ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface HuaMethod {
     Method method();
 
-    String url();
+    String url() default "";
 
     boolean form() default false;
 

@@ -14,38 +14,23 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
 </dependency>
 ```
 
-## 配置文件設置掃描路徑（可選，默認掃描啟動類下）
+## 配置文件
 
 ```yaml
 com:
   github:
     hua777:
       hua-http-spring-boot-starter:
-        scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
-        http-timeout-seconds: 60 # 默認 60
-        http-redirects: true # 默認 true
+        scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2 # 自定义额外扫描类
+        http-timeout-seconds: 60 # 请求超时时间（秒）
+        http-redirects: true # 是否自行重导向
 ```
 
 ## 教學
-
-### 使用下面教程定義好的接口
-
-```java
-@Service
-public class MyService {
-    
-    @Autowired
-    TestHttp testhttp;
-
-    public void run() {
-        testhttp.get();
-    }
-}
-```
 
 ### 發送 Get、Delete 請求
 
@@ -56,13 +41,13 @@ public interface TestHttp {
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaMethod(method = Method.GET, url = "/get/hello/world")
+    @HuaGet(url = "/get/hello/world")
     String getHelloWorld(String hello);
 
     /*
      * http delete http://hello-world.com/delete/hello/world?hello=xxx
      */
-    @HuaMethod(method = Method.DELETE, url = "/delete/hello/world")
+    @HuaDelete(url = "/delete/hello/world")
     String deleteHelloWorld(String hello);
 }
 ```
@@ -79,7 +64,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaMethod(method = Method.POST, url = "/post/hello/world")
+    @HuaPost(url = "/post/hello/world")
     String postHelloWorld(String hello); // default is body
 
     /*
@@ -88,7 +73,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaMethod(method = Method.PUT, url = "/put/hello/world")
+    @HuaPut(url = "/put/hello/world")
     String putHelloWorld(String hello);
 }
 ```
@@ -102,7 +87,7 @@ public interface TestHttp {
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaMethod(method = Method.GET, url = "/get/hello/world")
+    @HuaGet(url = "/get/hello/world")
     String getHelloWorld(String hello);
 }
 ```
@@ -119,7 +104,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaMethod(method = Method.POST, url = "/post/hello/world")
+    @HuaPost(url = "/post/hello/world")
     String postHelloWorld(String hello, @HuaParam String param);
 }
 ```
@@ -134,7 +119,7 @@ public interface TestHttp {
      * http post http://hello-world.com/post/hello/world
      * body = hello=xxx&world=xxx
      */
-    @HuaMethod(method = Method.POST, url = "/post/hello/world", form = true)
+    @HuaPost(url = "/post/hello/world", form = true)
     String postHelloWorld(String hello, String world);
 }
 ```
@@ -158,8 +143,8 @@ public interface TestHttp {
      *     "world": "xxx"
      * }
      */
-    @HuaMethod(method = Method.POST, url = "/post/hello/world")
-    String postHelloWorld(@HuaParam(type = ParamType.QUERY, full = true) YourBean paramBean, @HuaParam(type = ParamType.BODY, full = true) YourBean bodyBean);
+    @HuaPost(url = "/post/hello/world")
+    String postHelloWorld(@HuaQuery(full = true) YourBean paramBean, @HuaBody(full = true) YourBean bodyBean);
 }
 ```
 
@@ -172,15 +157,15 @@ public interface TestHttp {
     /*
      * http post http://hello-world.com/post/hello/world/xxx
      */
-    @HuaMethod(method = Method.POST, url = "/post/hello/world/{pathValue}")
-    String postHelloWorld(@HuaParam(type = ParamType.PATH) String pathValue);
+    @HuaPost(url = "/post/hello/world/{pathValue}")
+    String postHelloWorld(@HuaPath String pathValue);
 }
 ```
 
 ### 动态 Header
 
 ```java
-@HuaParam(type = ParamType.HEADER, create = Creator.class) // 全局添加，優先級低
+@HuaHeader(create = Creator.class) // 全局添加，優先級低
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
@@ -192,9 +177,9 @@ public interface TestHttp {
      *     "InputToken": "xxx"
      * }
      */
-    @HuaMethod(method = Method.GET, url = "/get/hello/world")
-    @HuaParam(type = ParamType.HEADER, create = Creator.class) // 此方法添加，優先級高
-    String testHeader(@HuaParam(type = ParamType.HEADER, name = "InputToken") String token); // 變量添加
+    @HuaGet(url = "/get/hello/world")
+    @HuaHeader(create = Creator.class) // 此方法添加，優先級高
+    String testHeader(@HuaHeader(name = "InputToken") String token); // 變量添加
 }
 ```
 
@@ -202,59 +187,35 @@ public interface TestHttp {
 
 ```java
 @Configuration
-public class MyHttpHandlerConfig implements HttpHandlerConfig {
+public class MyHandler implements HttpHandler {
     @Override
-    public HttpHandlerSetting getSetting() {
-        HttpHandlerSetting setting = new HttpHandlerSetting();
-        setting.addMethod("please_tag_me", new HttpHandlerMethod() {
+    public void beforeHttpMethod(HttpRequest request) {
+        log.info("请求：" + request.toString());
+    }
 
-            final ThreadLocal<String> tlUrl = new ThreadLocal<>();
+    @Override
+    public void afterHttpMethod(HttpResponse response) {
+        log.info("返回：" + response.toString());
+    }
 
-            @Override
-            public void beforeHttpMethod(HttpRequest request) {
-                // 请求前操作
-                tlUrl.set(request.getUrl());
-            }
-
-            @Override
-            public void afterHttpMethod(HttpResponse response) {
-                // 请求后操作
-                if (!response.isOk()) {
-                    log.error("请求地址 {} 不成功，返回内容为 {}！", tlUrl.get(), response.body());
-                }
-            }
-
-            @Override
-            public String preHandleResponse(String originString) {
-                // 请求结果预处理
-                // 假如函数接口返回值写的 Happy
-                // 真实返回值是 Response<Happy>
-                // 则透过此方法转换为 Happy
-                Response<String> response = JsonMan.fromJson(originString, new TypeReference<Response<String>>() {
-                }.getType());
-                if (response.getCode().equals(Response.ERROR)) {
-                    throw new RequestException(response.getMsg());
-                }
-                return response.getContent();
-            }
-
-        });
-        setting.addMoreScanPackage("代码内写死额外的扫描包");
-        return setting;
+    @Override
+    public String preHandleResponse(String originString) {
+        // 预处理返回值
+        return originString;
     }
 }
 ```
 
 ```java
-@HuaAop("please_tag_me")
+@HuaAop(MyHandler.class)
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaAop("please_tag_me")
-    @HuaParam(type = ParamType.GET, url = "/get/hello/world")
+    @HuaAop(MyHandler.class)
+    @HuaGet(url = "/get/hello/world")
     Happy getHelloWorld(String hello);
 }
 ```
@@ -274,11 +235,11 @@ public interface TestHttp {
     /*
      * http get http://hello-world.com/stream
      */
-    @HuaStream(
-        limit = DefaultStreamLimit.class // 重要：请务必自定义获取数据总量的方法
+    @HuaGet(
+        url = "/stream", 
+        streamLimit = DefaultStreamLimiter.class // 重要：请务必自定义获取数据总量的方法
         // 预设使用 response headers 内的 USER-DEFINED-DATA-COUNT 字段
     )
-    @HuaGet(url = "/stream")
     Stream<XXX> stream();
 
 }
