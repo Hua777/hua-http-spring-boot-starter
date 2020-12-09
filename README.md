@@ -105,7 +105,7 @@ public interface TestHttp {
      * }
      */
     @HuaPost(url = "/post/hello/world")
-    String postHelloWorld(String hello, @HuaParam String param);
+    String postHelloWorld(String hello, @HuaQuery String param);
 }
 ```
 
