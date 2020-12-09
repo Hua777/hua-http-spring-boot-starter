@@ -14,7 +14,7 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 <dependency>
     <groupId>com.github.hua777</groupId>
     <artifactId>hua-http-spring-boot-starter</artifactId>
-    <version>1.4.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -28,7 +28,6 @@ com:
         scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2
         http-timeout-seconds: 60 # 默認 60
         http-redirects: true # 默認 true
-        param-date-format: yyyy-MM-dd HH:mm:ss
 ```
 
 ## 教學
@@ -57,13 +56,13 @@ public interface TestHttp {
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaGet(url = "/get/hello/world")
+    @HuaMethod(method = Method.GET, url = "/get/hello/world")
     String getHelloWorld(String hello);
 
     /*
      * http delete http://hello-world.com/delete/hello/world?hello=xxx
      */
-    @HuaDelete(url = "/delete/hello/world")
+    @HuaMethod(method = Method.DELETE, url = "/delete/hello/world")
     String deleteHelloWorld(String hello);
 }
 ```
@@ -80,7 +79,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaPost(url = "/post/hello/world")
+    @HuaMethod(method = Method.POST, url = "/post/hello/world")
     String postHelloWorld(String hello); // default is body
 
     /*
@@ -89,7 +88,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaPut(url = "/put/hello/world")
+    @HuaMethod(method = Method.PUT, url = "/put/hello/world")
     String putHelloWorld(String hello);
 }
 ```
@@ -103,7 +102,7 @@ public interface TestHttp {
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaGet(url = "/get/hello/world")
+    @HuaMethod(method = Method.GET, url = "/get/hello/world")
     String getHelloWorld(String hello);
 }
 ```
@@ -120,7 +119,7 @@ public interface TestHttp {
      *     "hello": "xxx"
      * }
      */
-    @HuaPost(url = "/post/hello/world")
+    @HuaMethod(method = Method.POST, url = "/post/hello/world")
     String postHelloWorld(String hello, @HuaParam String param);
 }
 ```
@@ -135,8 +134,7 @@ public interface TestHttp {
      * http post http://hello-world.com/post/hello/world
      * body = hello=xxx&world=xxx
      */
-    @HuaForm
-    @HuaPost(url = "/post/hello/world")
+    @HuaMethod(method = Method.POST, url = "/post/hello/world", form = true)
     String postHelloWorld(String hello, String world);
 }
 ```
@@ -160,8 +158,8 @@ public interface TestHttp {
      *     "world": "xxx"
      * }
      */
-    @HuaPost(url = "/post/hello/world")
-    String postHelloWorld(@HuaParam(full=true) YourBean paramBean, @HuaBody(full=true) YourBean bodyBean);
+    @HuaMethod(method = Method.POST, url = "/post/hello/world")
+    String postHelloWorld(@HuaParam(type = ParamType.QUERY, full = true) YourBean paramBean, @HuaParam(type = ParamType.BODY, full = true) YourBean bodyBean);
 }
 ```
 
@@ -174,15 +172,15 @@ public interface TestHttp {
     /*
      * http post http://hello-world.com/post/hello/world/xxx
      */
-    @HuaPost(url = "/post/hello/world/{pathValue}")
-    String postHelloWorld(@HuaPath String pathValue);
+    @HuaMethod(method = Method.POST, url = "/post/hello/world/{pathValue}")
+    String postHelloWorld(@HuaParam(type = ParamType.PATH) String pathValue);
 }
 ```
 
-### 請求時帶上 Header
+### 动态 Header
 
 ```java
-@HuaHeader(names = {"big_token1"}, values = {"big_value1"}) // 全局添加，優先級低
+@HuaParam(type = ParamType.HEADER, create = Creator.class) // 全局添加，優先級低
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
@@ -194,28 +192,9 @@ public interface TestHttp {
      *     "InputToken": "xxx"
      * }
      */
-    @HuaGet(url = "/get/hello/world")
-    @HuaHeader(names = {"token1"}, values = {"value1"}) // 此方法添加，優先級高
-    String testHeader(@HuaHeader(name = "InputToken") String token); // 變量添加
-}
-```
-
-### 請求時使用 Token
-
-```java
-@HuaToken(name = "name1", key = "key1", iss = "iss1", sub = "sub1") // 全局添加，優先級低
-@HuaHttp("http://hello-world.com")
-public interface TestHttp {
-
-    /*
-     * http get http://hello-world.com/get/hello/world
-     * headers {
-     *     "name2": "token2"
-     * }
-     */
-    @HuaGet(url = "/get/hello/world")
-    @HuaToken(name = "name2", key = "key2", iss = "iss2", sub = "sub2") // 此方法添加，優先級高
-    String testToken2();
+    @HuaMethod(method = Method.GET, url = "/get/hello/world")
+    @HuaParam(type = ParamType.HEADER, create = Creator.class) // 此方法添加，優先級高
+    String testHeader(@HuaParam(type = ParamType.HEADER, name = "InputToken") String token); // 變量添加
 }
 ```
 
@@ -246,12 +225,12 @@ public class MyHttpHandlerConfig implements HttpHandlerConfig {
             }
 
             @Override
-            public String preHandleResponse(String originString, JsonMan jsonMan) {
+            public String preHandleResponse(String originString) {
                 // 请求结果预处理
                 // 假如函数接口返回值写的 Happy
                 // 真实返回值是 Response<Happy>
                 // 则透过此方法转换为 Happy
-                Response<String> response = jsonMan.fromJson(originString, new TypeReference<Response<String>>() {
+                Response<String> response = JsonMan.fromJson(originString, new TypeReference<Response<String>>() {
                 }.getType());
                 if (response.getCode().equals(Response.ERROR)) {
                     throw new RequestException(response.getMsg());
@@ -275,39 +254,8 @@ public interface TestHttp {
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
     @HuaAop("please_tag_me")
-    @HuaGet(url = "/get/hello/world")
+    @HuaParam(type = ParamType.GET, url = "/get/hello/world")
     Happy getHelloWorld(String hello);
-}
-```
-
-### 動態 Header
-
-```java
-@HuaHeader(creator = MyHeaderCreator.class)
-@HuaHttp("http://hello-world.com")
-public interface TestHttp {
-
-    /*
-     * http get http://hello-world.com/get/hello/world?hello=xxx
-     */
-    @HuaHeader(creator = MyHeaderCreator.class)
-    @HuaGet(url = "/get/hello/world")
-    String getHelloWorld(String hello);
-
-}
-```
-
-```java
-@Configuration
-public class MyHeaderCreator implements HeadersCreator {
-
-    @Override
-    public HashMap<String, String> headers() {
-        return new HashMap<String, String>() {{
-            put("key", "value");
-        }};
-    }
-
 }
 ```
 
@@ -338,27 +286,15 @@ public interface TestHttp {
 
 ## 這個項目使用的依賴包
 
-### hutool-all
+### hutool-http
 
 用於請求 Http [Hutool](https://github.com/looly/hutool)
 
 ```xml
 <dependency>
     <groupId>cn.hutool</groupId>
-    <artifactId>hutool-all</artifactId>
-    <version>5.3.8</version>
-</dependency>
-```
-
-### gson
-
-用於解析請求返回值 Json [Gson](https://github.com/google/gson)
-
-```xml
-<dependency>
-    <groupId>com.google.code.gson</groupId>
-    <artifactId>gson</artifactId>
-    <version>2.8.6</version>
+    <artifactId>hutool-http</artifactId>
+    <version>5.5.2</version>
 </dependency>
 ```
 
@@ -373,16 +309,3 @@ public interface TestHttp {
     <version>1.2.73</version>
 </dependency>
 ```
-
-### java-jwt
-
-用於請求頭加上 Token [java-jwt](https://github.com/auth0/java-jwt)
-
-```xml
-<dependency>
-    <groupId>com.auth0</groupId>
-    <artifactId>java-jwt</artifactId>
-    <version>3.10.3</version>
-</dependency>
-```
-

@@ -20,30 +20,30 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, Applic
 
     static Logger log = LoggerFactory.getLogger(HttpRegistry.class);
 
-    ApplicationContext applicationContext;
+    public static ApplicationContext APP_CONTEXT;
 
     @Override
     public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+        HttpRegistry.APP_CONTEXT = applicationContext;
     }
 
     @Override
     public void postProcessBeanDefinitionRegistry(@NotNull BeanDefinitionRegistry registry) throws BeansException {
-        List<String> defaultScanPackages = AutoConfigurationPackages.get(applicationContext);
+        List<String> defaultScanPackages = AutoConfigurationPackages.get(APP_CONTEXT);
         try {
-            HttpProperty httpProperty = applicationContext.getBean(HttpProperty.class);
+            HttpProperty httpProperty = APP_CONTEXT.getBean(HttpProperty.class);
             defaultScanPackages.addAll(Arrays.asList(httpProperty.getScanPackages().split(",")));
         } catch (Exception ignored) {
 
         }
         try {
-            HttpHandlerConfig httpHandlerConfig = HttpHandlerConfig.fromBeanFactory(applicationContext);
+            HttpHandlerConfig httpHandlerConfig = HttpHandlerConfig.merge();
             defaultScanPackages.addAll(httpHandlerConfig.getSetting().getMoreScanPackages());
         } catch (Exception ignored) {
 
         }
         HttpScanner scanner = new HttpScanner(registry);
-        scanner.setResourceLoader(applicationContext);
+        scanner.setResourceLoader(APP_CONTEXT);
         scanner.doScan(defaultScanPackages.toArray(new String[0]));
     }
 

@@ -1,11 +1,17 @@
 package com.github.hua777.huahttp.bean;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.TypeReference;
 import com.alibaba.fastjson.JSONObject;
-import com.github.hua777.huahttp.enumerate.JsonType;
-import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.Map;
 
 public class JsonMan {
 
@@ -13,79 +19,83 @@ public class JsonMan {
 
     }
 
-    Gson gson = new Gson();
-
     @SuppressWarnings("unchecked")
-    public <T> T fromJson(String object, Type type) {
+    public static <T> T fromJsonCast(String object, Type type) {
+        return (T) fromJson(object, type);
+    }
+
+    public static Object fromJson(String object, Type type) {
         if (object == null) {
             return null;
         }
         String[] classNames = type.getTypeName().split("\\.");
         String typeName = classNames[classNames.length - 1];
-        if (typeName.equals("Void") || typeName.equals("void")) {
-            return null;
+        switch (typeName) {
+            case "Void":
+            case "void":
+                return null;
+            case "String":
+                return object;
+            case "Byte":
+            case "byte":
+                return Byte.parseByte(object);
+            case "Short":
+            case "short":
+                return Short.parseShort(object);
+            case "Integer":
+            case "int":
+                return Integer.parseInt(object);
+            case "Long":
+            case "long":
+                return Long.parseLong(object);
+            case "Float":
+            case "float":
+                return Float.parseFloat(object);
+            case "Double":
+            case "double":
+                return Double.parseDouble(object);
+            case "Boolean":
+            case "boolean":
+                return Boolean.parseBoolean(object);
+            case "Character":
+            case "char":
+                return object.charAt(0);
+            case "BigDecimal":
+                return new BigDecimal(object);
+            case "LocalDateTime":
+                return DateUtil.parseLocalDateTime(object, "yyyy-MM-dd HH:mm:ss");
+            case "LocalDate":
+                return DateUtil.parseLocalDateTime(object, "yyyy-MM-dd HH:mm:ss").toLocalDate();
+            case "Date":
+                return Date.from(DateUtil.parseLocalDateTime(object, "yyyy-MM-dd HH:mm:ss")
+                        .atZone(ZoneId.systemDefault()).toInstant());
         }
-        if (typeName.equals("String")) {
-            return (T) object;
-        }
-        if (typeName.equals("Byte") || typeName.equals("byte")) {
-            return (T) ((Byte) Byte.parseByte(object));
-        }
-        if (typeName.equals("Short") || typeName.equals("short")) {
-            return (T) ((Short) Short.parseShort(object));
-        }
-        if (typeName.equals("Integer") || typeName.equals("int")) {
-            return (T) ((Integer) Integer.parseInt(object));
-        }
-        if (typeName.equals("Long") || typeName.equals("long")) {
-            return (T) ((Long) Long.parseLong(object));
-        }
-        if (typeName.equals("Float") || typeName.equals("float")) {
-            return (T) ((Float) Float.parseFloat(object));
-        }
-        if (typeName.equals("Double") || typeName.equals("double")) {
-            return (T) ((Double) Double.parseDouble(object));
-        }
-        if (typeName.equals("Boolean") || typeName.equals("boolean")) {
-            return (T) ((Boolean) Boolean.parseBoolean(object));
-        }
-        if (typeName.equals("Character") || typeName.equals("char")) {
-            return (T) (Character) object.charAt(0);
-        }
-        if (typeName.equals("BigDecimal")) {
-            return (T) (new BigDecimal(object));
-        }
-        switch (jsonType) {
-            case FastJson:
-                return JSONObject.parseObject(object, type);
-            case Gson:
-                return gson.fromJson(object, type);
-        }
-        return null;
+        return JSONObject.parseObject(object, type);
     }
 
-    public <T> String toJson(T object) {
-        switch (jsonType) {
-            case FastJson:
-                return JSONObject.toJSONString(object);
-            case Gson:
-                return gson.toJson(object);
-        }
-        return null;
+    public static <T> String toJson(T object) {
+        return JSONObject.toJSONString(object);
     }
 
-    JsonType jsonType;
-
-    public static JsonMan of(JsonType jsonType) {
-        JsonMan jsonMan = new JsonMan();
-        jsonMan.jsonType = jsonType;
-        return jsonMan;
+    public static Object prepareArgs(Object object) {
+        if (object instanceof LocalDateTime) {
+            return DateUtil.format((LocalDateTime) object, "yyyy-MM-dd HH:mm:ss");
+        } else if (object instanceof LocalDate) {
+            return ((LocalDate) object).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } else if (object instanceof Date) {
+            return DateUtil.format((Date) object, "yyyy-MM-dd HH:mm:ss");
+        }
+        return object;
     }
 
-    public void setGson(Gson gson) {
-        if (gson != null) {
-            this.gson = gson;
-        }
+    public static Map<String, String> toMapStringString(Object object) {
+        return fromJsonCast(toJson(object), new TypeReference<Map<String, String>>() {
+        }.getType());
+    }
+
+    public static Map<String, Object> toMapStringObject(Object object) {
+        return fromJsonCast(toJson(object), new TypeReference<Map<String, Object>>() {
+        }.getType());
     }
 
 }

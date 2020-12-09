@@ -1,4 +1,4 @@
-package com.github.hua777.huahttp.config.stream;
+package com.github.hua777.huahttp.config.limiter;
 
 import com.github.hua777.huahttp.bean.JsonMan;
 import org.slf4j.Logger;
@@ -20,11 +20,9 @@ public class InputStreamSupplier implements Supplier<Object> {
 
     public InputStreamSupplier(
             Type actualType,
-            JsonMan jsonMan,
             InputStream inputStream
     ) {
         this.actualType = actualType;
-        this.jsonMan = jsonMan;
 
         new Thread(() -> {
             BufferedReader bufferedReader = null;
@@ -50,7 +48,6 @@ public class InputStreamSupplier implements Supplier<Object> {
     }
 
     Type actualType;
-    JsonMan jsonMan;
 
     Queue<String> dataQueue = new ConcurrentLinkedQueue<>();
 
@@ -64,6 +61,6 @@ public class InputStreamSupplier implements Supplier<Object> {
             }
         }
         String line = dataQueue.poll();
-        return jsonMan.fromJson(line, actualType);
+        return JsonMan.fromJson(line, actualType);
     }
 }

@@ -17,7 +17,8 @@ public class HttpConfig {
     @Bean
     @ConditionalOnMissingBean(HttpProperty.class)
     public static HttpProperty httpProperty(ConfigurableEnvironment env) {
-        return PropertyTool.getPropertiesStartingWith(env, "com.github.hua777.hua-http-spring-boot-starter", HttpProperty.class);
+        return PropertyTool.getPropertiesStartingWith(
+                env, "com.github.hua777.hua-http-spring-boot-starter", HttpProperty.class);
     }
 
     @Bean

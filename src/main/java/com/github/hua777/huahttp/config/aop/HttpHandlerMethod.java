@@ -2,7 +2,6 @@ package com.github.hua777.huahttp.config.aop;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import com.github.hua777.huahttp.bean.JsonMan;
 
 public interface HttpHandlerMethod {
     default void beforeHttpMethod(HttpRequest request) {
@@ -11,7 +10,7 @@ public interface HttpHandlerMethod {
     default void afterHttpMethod(HttpResponse response) {
     }
 
-    default String preHandleResponse(String originString, JsonMan jsonMan) {
+    default String preHandleResponse(String originString) {
         return originString;
     }
 }

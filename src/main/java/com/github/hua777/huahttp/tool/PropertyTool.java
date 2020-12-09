@@ -1,6 +1,6 @@
 package com.github.hua777.huahttp.tool;
 
-import com.google.gson.Gson;
+import com.github.hua777.huahttp.bean.JsonMan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.CompositePropertySource;
@@ -23,7 +23,7 @@ public class PropertyTool {
 
     public static <T> T getPropertiesStartingWith(ConfigurableEnvironment environment, String prefix, Type type) {
         Map<String, Object> map = getPropertiesStartingWith(environment, prefix, true);
-        return new Gson().fromJson(new Gson().toJson(map), type);
+        return JsonMan.fromJsonCast(JsonMan.toJson(map), type);
     }
 
     public static Map<String, Object> getPropertiesStartingWith(ConfigurableEnvironment environment, String prefix, boolean removeMinus) {

@@ -1,34 +1,27 @@
 package com.github.hua777.huahttp.config;
 
-import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.github.hua777.huahttp.annotation.HuaAop;
 import com.github.hua777.huahttp.annotation.HuaHttp;
-import com.github.hua777.huahttp.annotation.method.*;
-import com.github.hua777.huahttp.annotation.param.HuaBody;
-import com.github.hua777.huahttp.annotation.param.HuaHeader;
-import com.github.hua777.huahttp.annotation.param.HuaParam;
-import com.github.hua777.huahttp.annotation.param.HuaPath;
+import com.github.hua777.huahttp.annotation.HuaMethod;
+import com.github.hua777.huahttp.annotation.HuaParam;
 import com.github.hua777.huahttp.bean.JsonMan;
 import com.github.hua777.huahttp.bean.ValueMan;
 import com.github.hua777.huahttp.config.aop.HttpHandlerConfig;
 import com.github.hua777.huahttp.config.aop.HttpHandlerMethod;
-import com.github.hua777.huahttp.config.creator.DefaultHeadersCreator;
-import com.github.hua777.huahttp.config.creator.HeadersCreator;
-import com.github.hua777.huahttp.config.stream.DefaultStreamLimit;
-import com.github.hua777.huahttp.config.stream.InputStreamSupplier;
-import com.github.hua777.huahttp.config.stream.StreamLimit;
+import com.github.hua777.huahttp.config.converter.DefaultParamConverter;
+import com.github.hua777.huahttp.config.creator.DefaultParamCreator;
+import com.github.hua777.huahttp.config.limiter.InputStreamSupplier;
+import com.github.hua777.huahttp.enumrate.ParamType;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.MapTool;
 import com.github.hua777.huahttp.tool.ReflectTool;
-import com.github.hua777.huahttp.tool.TokenTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 
@@ -37,10 +30,10 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class HttpHandler implements InvocationHandler {
@@ -48,72 +41,45 @@ public class HttpHandler implements InvocationHandler {
     static Logger log = LoggerFactory.getLogger(HttpHandler.class);
 
     Class<?> interfaceClass;
-    ApplicationContext applicationContext;
 
-    Environment environment;
-    HttpProperty httpProperty;
-    HttpHandlerConfig httpHandlerConfig;
-
-    public HttpHandler(Class<?> interfaceClass, ApplicationContext applicationContext) {
+    public HttpHandler(Class<?> interfaceClass) {
         this.interfaceClass = interfaceClass;
-        this.applicationContext = applicationContext;
-        environment = applicationContext.getBean(Environment.class);
-        httpProperty = applicationContext.getBean(HttpProperty.class);
-        httpHandlerConfig = HttpHandlerConfig.fromBeanFactory(applicationContext);
     }
 
-    private String getValue(String key) {
+    static Environment environment = HttpRegistry.APP_CONTEXT.getBean(Environment.class);
+    static HttpProperty httpProperty = HttpRegistry.APP_CONTEXT.getBean(HttpProperty.class);
+    static HttpHandlerConfig httpHandlerConfig = HttpHandlerConfig.merge();
+
+    private static String getValue(String key) {
         return ValueMan.parse(key).toString(environment);
     }
 
-    private HeadersCreator getHeadersCreator(HuaHeader huaHeader) {
-        HeadersCreator creator;
-        if (huaHeader != null) {
-            Class<? extends HeadersCreator> clazz = huaHeader.creator();
-            try {
-                creator = applicationContext.getBean(clazz);
-            } catch (BeansException ignored) {
-                creator = new DefaultHeadersCreator();
-            }
-        } else {
-            creator = new DefaultHeadersCreator();
-        }
-        return creator;
+    @SuppressWarnings("unchecked")
+    private static Supplier<Map<String, Object>> getHeadersCreator(Class<?> type) {
+        return (Supplier<Map<String, Object>>) HttpRegistry.APP_CONTEXT.getBean(type);
     }
 
-    private StreamLimit getStreamLimit(HuaStream huaStream) {
-        StreamLimit limit;
-        if (huaStream != null) {
-            Class<? extends StreamLimit> clazz = huaStream.limit();
-            try {
-                limit = applicationContext.getBean(clazz);
-            } catch (BeansException ignored) {
-                limit = new DefaultStreamLimit();
-            }
-        } else {
-            limit = new DefaultStreamLimit();
-        }
-        return limit;
+    @SuppressWarnings("unchecked")
+    private static Function<HttpResponse, Long> getStreamLimiter(Class<?> type) {
+        return (Function<HttpResponse, Long>) HttpRegistry.APP_CONTEXT.getBean(type);
     }
 
-    private void mergeHeaders(HashMap<String, String> headers, HuaHeader huaHeader) {
-        if (huaHeader != null) {
-            MapTool.merge(headers, getHeadersCreator(huaHeader).headers());
-        }
+    @SuppressWarnings("rawtypes")
+    private static Function getParamConverter(Class<?> type) {
+        return (Function) HttpRegistry.APP_CONTEXT.getBean(type);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
+    public Object invoke(Object proxy, Method method, Object[] args) {
 
-        cn.hutool.http.Method httpMethod = cn.hutool.http.Method.GET;
-
-        HashMap<String, String> headers = new HashMap<>();
-        HashMap<String, Object> params = new HashMap<>();
-        HashMap<String, Object> bodies = new HashMap<>();
-        HashMap<String, String> paths = new HashMap<>();
+        Map<ParamType, Map<String, Object>> params = new HashMap<>();
+        for (ParamType paramType : ParamType.values()) {
+            params.put(paramType, new HashMap<>());
+        }
 
         String baseUrl;
-        String subUrl = "";
+        String subUrl;
         String fullUrl;
 
         //region 获取切片方法
@@ -137,231 +103,93 @@ public class HttpHandler implements InvocationHandler {
         }
         //endregion
 
-        //region 检查是否为表单类型
-        boolean isForm = false;
-        HuaForm huaForm = AnnotationUtils.getAnnotation(method, HuaForm.class);
-        if (huaForm != null) {
-            isForm = huaForm.value();
-        }
-        //endregion
-
         //region 处理地址与请求方法
         HuaHttp huaHttp = AnnotationUtils.getAnnotation(interfaceClass, HuaHttp.class);
-        HuaGet huaGet = AnnotationUtils.getAnnotation(method, HuaGet.class);
-        HuaPost huaPost = AnnotationUtils.getAnnotation(method, HuaPost.class);
-        HuaPut huaPut = AnnotationUtils.getAnnotation(method, HuaPut.class);
-        HuaDelete huaDelete = AnnotationUtils.getAnnotation(method, HuaDelete.class);
+        HuaMethod huaMethod = AnnotationUtils.getAnnotation(method, HuaMethod.class);
         assert huaHttp != null;
-        JsonMan jsonMan = JsonMan.of(huaHttp.jsonType());
+        assert huaMethod != null;
         baseUrl = getValue(huaHttp.value());
-        if (huaGet != null) {
-            subUrl = getValue(huaGet.url());
-            httpMethod = cn.hutool.http.Method.GET;
-        } else if (huaPost != null) {
-            subUrl = getValue(huaPost.url());
-            httpMethod = cn.hutool.http.Method.POST;
-        } else if (huaPut != null) {
-            subUrl = getValue(huaPut.url());
-            httpMethod = cn.hutool.http.Method.PUT;
-        } else if (huaDelete != null) {
-            subUrl = getValue(huaDelete.url());
-            httpMethod = cn.hutool.http.Method.DELETE;
-        }
+        subUrl = getValue(huaMethod.url());
         fullUrl = baseUrl + subUrl;
         if (StrUtil.isEmpty(fullUrl)) {
             throw new IllegalArgumentException("请求地址为空！");
         }
         //endregion
 
-        //region 处理 Token
-        HuaToken huaToken = AnnotationUtils.getAnnotation(interfaceClass, HuaToken.class);
-        if (huaToken == null) {
-            huaToken = AnnotationUtils.getAnnotation(method, HuaToken.class);
-        }
-        if (huaToken != null) {
-            String key = getValue(huaToken.key());
-            String iss = getValue(huaToken.iss());
-            String sub = getValue(huaToken.sub());
-            long iat = Long.parseLong(getValue(huaToken.issuedAtTimeThresholdMs()));
-            long vp = Long.parseLong(getValue(huaToken.validityPeriodMs()));
-            String name = getValue(huaToken.name());
-            String token = TokenTool.createJWTByHMAC256(key, iss, sub, iat, vp);
-            if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(token)) {
-                headers.put(name, token);
+        //region 处理 类上的 Params
+        HuaParam[] huaClassParams = interfaceClass.getAnnotationsByType(HuaParam.class);
+        for (HuaParam huaParam : huaClassParams) {
+            if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
+                continue;
             }
+            Map<String, Object> param = params.get(huaParam.type());
+            MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
         }
         //endregion
 
-        //region 处理 Headers
-        HuaHeader typeHeader = AnnotationUtils.getAnnotation(interfaceClass, HuaHeader.class);
-        if (typeHeader != null) {
-            String[] names = typeHeader.names();
-            String[] values = typeHeader.values();
-            if (names.length != values.length) {
-                throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
+        //region 处理 函数上的 Params
+        HuaParam[] huaMethodParams = method.getAnnotationsByType(HuaParam.class);
+        for (HuaParam huaParam : huaMethodParams) {
+            if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
+                continue;
             }
-            for (int i = 0; i < names.length; ++i) {
-                String name = getValue(names[i]);
-                String value = getValue(values[i]);
-                if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(value)) {
-                    headers.put(name, value);
-                }
-            }
-            mergeHeaders(headers, typeHeader);
-        }
-
-        HuaHeader methodHeader = AnnotationUtils.getAnnotation(method, HuaHeader.class);
-        if (methodHeader != null) {
-            String[] names = methodHeader.names();
-            String[] values = methodHeader.values();
-            if (names.length != values.length) {
-                throw new IllegalArgumentException("Header names 与 values 长度不匹配。");
-            }
-            for (int i = 0; i < names.length; ++i) {
-                String name = getValue(names[i]);
-                String value = getValue(values[i]);
-                if (!StrUtil.isEmpty(name) && !StrUtil.isEmpty(value)) {
-                    headers.put(name, value);
-                }
-            }
-            mergeHeaders(headers, methodHeader);
+            Map<String, Object> param = params.get(huaParam.type());
+            MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
         }
         //endregion
 
-        //region 处理 Params
-        HuaParam methodParam = AnnotationUtils.getAnnotation(method, HuaParam.class);
-        if (methodParam != null) {
-            String[] names = methodParam.names();
-            String[] values = methodParam.values();
-            if (names.length != values.length) {
-                throw new IllegalArgumentException("Param names 与 values 长度不匹配。");
-            }
-            for (int i = 0; i < names.length; ++i) {
-                params.put(getValue(names[i]), getValue(values[i]));
-            }
-        }
-        //endregion
-
-        //region 处理 Bodies
-        HuaBody methodBody = AnnotationUtils.getAnnotation(method, HuaBody.class);
-        if (methodBody != null) {
-            String[] names = methodBody.names();
-            String[] values = methodBody.values();
-            if (names.length != values.length) {
-                throw new IllegalArgumentException("Body names 与 values 长度不匹配。");
-            }
-            for (int i = 0; i < names.length; ++i) {
-                bodies.put(getValue(names[i]), getValue(values[i]));
-            }
-        }
-        //endregion
-
-        //region 处理 Paths
-        HuaPath methodPath = AnnotationUtils.getAnnotation(method, HuaPath.class);
-        if (methodPath != null) {
-            String[] names = methodPath.names();
-            String[] values = methodPath.values();
-            if (names.length != values.length) {
-                throw new IllegalArgumentException("Path names 与 values 长度不匹配。");
-            }
-            for (int i = 0; i < names.length; ++i) {
-                paths.put(getValue(names[i]), getValue(values[i]));
-            }
-        }
-        //endregion
-
-        //region 处理参数
-        boolean bodyIsFull = false;
-        String bodyFullKey = null;
-        boolean paramIsFull = false;
-        String paramFullKey = null;
+        //region 处理 参数上的 Params
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; ++i) {
             Parameter parameter = parameters[i];
-            Object arg = args[i];
             HuaParam huaParam = AnnotationUtils.getAnnotation(parameter, HuaParam.class);
-            HuaBody huaBody = AnnotationUtils.getAnnotation(parameter, HuaBody.class);
-            HuaPath huaPath = AnnotationUtils.getAnnotation(parameter, HuaPath.class);
-            HuaHeader huaHeader = AnnotationUtils.getAnnotation(parameter, HuaHeader.class);
-            //region 处理参数名与参数值转换
-            String paramName = parameter.getName();
-            String paramMethodName = "";
+            String paramName = getValue(parameter.getName());
+            Object paramValue = args[i];
             if (huaParam != null) {
-                if (!huaParam.name().equals("")) {
-                    paramName = getValue(huaParam.name());
+                if (StrUtil.isNotBlank(huaParam.name())) {
+                    // 自定义参数名
+                    paramName = huaParam.name();
                 }
-                paramMethodName = huaParam.method();
-            } else if (huaBody != null) {
-                if (!huaBody.name().equals("")) {
-                    paramName = getValue(huaBody.name());
+                if (!huaParam.convert().isAssignableFrom(DefaultParamConverter.class)) {
+                    // 自定义参数转换器
+                    paramValue = getParamConverter(huaParam.convert()).apply(paramValue);
                 }
-                paramMethodName = huaBody.method();
-            } else if (huaPath != null) {
-                if (!huaPath.name().equals("")) {
-                    paramName = getValue(huaPath.name());
-                }
-                paramMethodName = huaPath.method();
-            } else if (huaHeader != null) {
-                if (!huaHeader.name().equals("")) {
-                    paramName = getValue(huaHeader.name());
-                }
-                paramMethodName = huaHeader.method();
             }
-            if (!paramMethodName.equals("")) {
-                arg = parameter.getType().getMethod(paramMethodName).invoke(arg);
-            }
-            //endregion
-            if (huaParam != null) {
-                if (huaParam.full()) {
-                    paramIsFull = true;
-                    paramFullKey = paramName;
-                }
-                if (arg instanceof LocalDateTime) {
-                    arg = DateUtil.format((LocalDateTime) arg, httpProperty.getParamDateFormat());
-                } else if (arg instanceof Date) {
-                    arg = DateUtil.format((Date) arg, httpProperty.getParamDateFormat());
-                }
-                params.put(paramName, arg);
-            } else if (huaBody != null) {
-                if (huaBody.full()) {
-                    bodyIsFull = true;
-                    bodyFullKey = paramName;
-                }
-                bodies.put(paramName, arg);
-            } else if (huaPath != null) {
-                paths.put(paramName, arg.toString());
-            } else if (huaHeader != null) {
-                String value = arg.toString();
-                if (!StrUtil.isEmpty(paramName) && !StrUtil.isEmpty(value)) {
-                    headers.put(paramName, value);
+            Map<String, Object> param;
+            if (huaParam == null) {
+                // 没有指定参数类型时，预设根据方法类型指定参数类型
+                switch (huaMethod.method()) {
+                    case GET:
+                    case DELETE:
+                        param = params.get(ParamType.QUERY);
+                        break;
+                    case PUT:
+                    case POST:
+                        param = params.get(ParamType.BODY);
+                        break;
+                    default:
+                        throw new RuntimeException("不支持的类型");
                 }
             } else {
-                if (huaPost != null || huaPut != null) {
-                    bodies.put(paramName, arg);
-                } else {
-                    if (arg instanceof LocalDateTime) {
-                        arg = DateUtil.format((LocalDateTime) arg, httpProperty.getParamDateFormat());
-                    } else if (arg instanceof Date) {
-                        arg = DateUtil.format((Date) arg, httpProperty.getParamDateFormat());
-                    }
-                    params.put(paramName, arg);
-                }
+                param = params.get(huaParam.type());
+            }
+            if (huaParam != null && huaParam.full()) {
+                MapTool.mergeToLeft(param, JsonMan.toMapStringObject(paramValue));
+            } else {
+                paramValue = JsonMan.prepareArgs(paramValue);
+                param.put(paramName, paramValue);
             }
         }
         //endregion
 
         //region 处理 Paths
-        for (Map.Entry<String, String> entry : paths.entrySet()) {
-            fullUrl = fullUrl.replace("{" + entry.getKey() + "}", entry.getValue());
+        for (Map.Entry<String, Object> entry : params.get(ParamType.PATH).entrySet()) {
+            fullUrl = fullUrl.replace("{" + entry.getKey() + "}", entry.getValue().toString());
         }
         //endregion
 
-        //region 处理 Params
-        if (paramIsFull) {
-            fullUrl = HttpUtil.urlWithForm(fullUrl, MapTool.toMap(params.get(paramFullKey)), StandardCharsets.UTF_8, true);
-        } else {
-            fullUrl = HttpUtil.urlWithForm(fullUrl, params, StandardCharsets.UTF_8, true);
-        }
+        //region 处理 Query
+        fullUrl = HttpUtil.urlWithForm(fullUrl, params.get(ParamType.QUERY), StandardCharsets.UTF_8, true);
         //endregion
 
         // 是否返回串流
@@ -372,27 +200,19 @@ public class HttpHandler implements InvocationHandler {
 
         //region 创建请求
         HttpRequest request = (new HttpRequest(fullUrl))
-                .method(httpMethod)
+                .method(huaMethod.method())
                 .timeout(httpProperty.getHttpTimeoutSeconds() * 1000)
-                .addHeaders(headers)
+                .addHeaders(JsonMan.fromJsonCast(JsonMan.toJson(params.get(ParamType.HEADER)),
+                        new TypeReference<Map<String, String>>() {
+                        }.getType()))
                 .setFollowRedirects(httpProperty.getHttpRedirects());
-        switch (httpMethod) {
+        switch (huaMethod.method()) {
             case POST:
             case PUT:
-                if (isForm) {
-                    request = request.contentType("application/x-www-form-urlencoded");
-                    if (bodyIsFull) {
-                        request = request.form(MapTool.toMap(bodies.get(bodyFullKey)));
-                    } else {
-                        request = request.form(bodies);
-                    }
+                if (huaMethod.form()) {
+                    request = request.contentType("application/x-www-form-urlencoded").form(params.get(ParamType.BODY));
                 } else {
-                    request = request.contentType("application/json");
-                    if (bodyIsFull) {
-                        request = request.body(jsonMan.toJson(bodies.get(bodyFullKey)));
-                    } else {
-                        request = request.body(jsonMan.toJson(bodies));
-                    }
+                    request = request.contentType("application/json").body(JsonMan.toJson(params.get(ParamType.BODY)));
                 }
                 break;
         }
@@ -416,19 +236,17 @@ public class HttpHandler implements InvocationHandler {
         if (isReturnInputStream) {
             return response.bodyStream();
         } else if (isReturnStream) {
-            HuaStream huaStream = AnnotationUtils.getAnnotation(method, HuaStream.class);
-            StreamLimit streamLimit = getStreamLimit(huaStream);
-            long count = streamLimit.getDataCount(response);
+            Function<HttpResponse, Long> streamLimiter = getStreamLimiter(huaMethod.streamLimit());
+            long count = streamLimiter.apply(response);
             InputStreamSupplier supplier = new InputStreamSupplier(
                     ReflectTool.getActualTypes(method.getGenericReturnType())[0],
-                    jsonMan,
                     response.bodyStream()
             );
             return Stream.generate(supplier).limit(count);
         } else {
             String resultString = response.body();
-            resultString = aopMethod.preHandleResponse(resultString, jsonMan);
-            return jsonMan.fromJson(resultString, method.getGenericReturnType());
+            resultString = aopMethod.preHandleResponse(resultString);
+            return JsonMan.fromJson(resultString, method.getGenericReturnType());
         }
         //endregion
     }

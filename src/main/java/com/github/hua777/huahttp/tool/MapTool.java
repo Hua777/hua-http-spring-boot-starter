@@ -2,41 +2,18 @@ package com.github.hua777.huahttp.tool;
 
 import cn.hutool.core.util.StrUtil;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MapTool {
 
-    public static Map<String, String> merge(Map<String, String> left, Map<String, String> right) {
+    public static void mergeToLeft(Map<String, Object> left, Map<String, Object> right) {
         if (right != null) {
-            for (Map.Entry<String, String> entry : right.entrySet()) {
-                if (!StrUtil.isEmpty(entry.getKey()) && !StrUtil.isEmpty(entry.getValue())) {
+            for (Map.Entry<String, Object> entry : right.entrySet()) {
+                if (StrUtil.isNotBlank(entry.getKey()) && entry.getValue() != null) {
                     left.put(entry.getKey(), entry.getValue());
                 }
             }
         }
-        return left;
-    }
-
-    public static Map<String, Object> toMap(Object object) {
-        Map<String, Object> result = new HashMap<>();
-        for (Field field : object.getClass().getDeclaredFields()) {
-            String fieldName = field.getName();
-            for (Method method : object.getClass().getDeclaredMethods()) {
-                String methodName = method.getName();
-                if (("get" + fieldName.toLowerCase()).toLowerCase().equals(methodName.toLowerCase())) {
-                    try {
-                        Object fieldValue = method.invoke(object);
-                        result.put(fieldName, fieldValue);
-                    } catch (Exception ignored) {
-
-                    }
-                }
-            }
-        }
-        return result;
     }
 
 }

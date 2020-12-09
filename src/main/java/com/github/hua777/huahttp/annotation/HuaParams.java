@@ -2,9 +2,9 @@ package com.github.hua777.huahttp.annotation;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface HuaHttp {
-    String value() default "";
+public @interface HuaParams {
+    HuaParam[] value();
 }

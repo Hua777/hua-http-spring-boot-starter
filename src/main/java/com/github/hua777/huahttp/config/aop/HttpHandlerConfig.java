@@ -1,6 +1,6 @@
 package com.github.hua777.huahttp.config.aop;
 
-import org.springframework.beans.factory.ListableBeanFactory;
+import com.github.hua777.huahttp.config.HttpRegistry;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,11 +11,11 @@ public interface HttpHandlerConfig {
 
     HttpHandlerSetting getSetting();
 
-    static HttpHandlerConfig fromBeanFactory(ListableBeanFactory beanFactory) {
+    static HttpHandlerConfig merge() {
         Map<String, HttpHandlerMethod> methods = new HashMap<>();
         Set<String> moreScanPackages = new HashSet<>();
         for (Map.Entry<String, HttpHandlerConfig> targetEntry :
-                beanFactory.getBeansOfType(HttpHandlerConfig.class).entrySet()) {
+                HttpRegistry.APP_CONTEXT.getBeansOfType(HttpHandlerConfig.class).entrySet()) {
             for (Map.Entry<String, HttpHandlerMethod> entry : targetEntry.getValue().getSetting().getMethods().entrySet()) {
                 methods.put(entry.getKey(), entry.getValue());
             }

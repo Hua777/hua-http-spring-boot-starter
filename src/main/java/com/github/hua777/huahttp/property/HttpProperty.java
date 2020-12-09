@@ -8,8 +8,6 @@ public class HttpProperty {
 
     Boolean httpRedirects = true;
 
-    String paramDateFormat = "yyyy-MM-dd HH:mm:ss";
-
     public String getScanPackages() {
         return scanPackages;
     }
@@ -32,13 +30,5 @@ public class HttpProperty {
 
     public void setHttpRedirects(Boolean httpRedirects) {
         this.httpRedirects = httpRedirects;
-    }
-
-    public String getParamDateFormat() {
-        return paramDateFormat;
-    }
-
-    public void setParamDateFormat(String paramDateFormat) {
-        this.paramDateFormat = paramDateFormat;
     }
 }
