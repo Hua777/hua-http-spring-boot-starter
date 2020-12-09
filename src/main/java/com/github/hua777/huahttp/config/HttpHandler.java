@@ -17,7 +17,6 @@ import com.github.hua777.huahttp.config.limiter.InputStreamSupplier;
 import com.github.hua777.huahttp.enumrate.ParamType;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.MapTool;
-import com.github.hua777.huahttp.tool.ReflectTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -27,6 +26,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -185,10 +185,10 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         // 是否返回串流
-        boolean isReturnInputStream = ReflectTool.fromClass(method.getReturnType(), InputStream.class);
+        boolean isReturnInputStream = method.getReturnType().isAssignableFrom(InputStream.class);
 
         // 是否返回流
-        boolean isReturnStream = ReflectTool.isClass(method.getReturnType(), Stream.class);
+        boolean isReturnStream = method.getReturnType().isAssignableFrom(Stream.class);
 
         //region 创建请求
         HttpRequest request = (new HttpRequest(fullUrl))
@@ -235,7 +235,7 @@ public class HttpHandler implements InvocationHandler {
             Function<HttpResponse, Long> streamLimiter = getStreamLimiter(huaMethod.streamLimit());
             long count = streamLimiter.apply(response);
             InputStreamSupplier supplier = new InputStreamSupplier(
-                    ReflectTool.getActualTypes(method.getGenericReturnType())[0],
+                    ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0],
                     response.bodyStream()
             );
             return Stream.generate(supplier).limit(count);
