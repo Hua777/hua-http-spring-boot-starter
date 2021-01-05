@@ -18,16 +18,16 @@ SpringBoot 小白的我，歡迎大家 Issues、Fork、Pull Requests :smile:。
 </dependency>
 ```
 
-## 配置文件
+## 配置文件（基本可以不用配置）
 
 ```yaml
 com:
   github:
     hua777:
       hua-http-spring-boot-starter:
-        scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2 # 自定义额外扫描类
-        http-timeout-seconds: 60 # 请求超时时间（秒）
-        http-redirects: true # 是否自行重导向
+        scan-packages: xxx.xxx.xxx1,xxx.xxx.xxx2 # 自定义额外扫描类 默认启动类下的所有包
+        http-timeout-seconds: 60 # 请求超时时间（秒）默认 60
+        http-redirects: true # 是否自行重导向 默认 true
 ```
 
 ## 教學
@@ -207,14 +207,14 @@ public class MyHandler implements HttpHandler {
 ```
 
 ```java
-@HuaAop(MyHandler.class)
+@HuaAop(MyHandler.class) // 全局
 @HuaHttp("http://hello-world.com")
 public interface TestHttp {
 
     /*
      * http get http://hello-world.com/get/hello/world?hello=xxx
      */
-    @HuaAop(MyHandler.class)
+    @HuaAop(MyHandler.class) // 只有这个函数
     @HuaGet(url = "/get/hello/world")
     Happy getHelloWorld(String hello);
 }
@@ -242,6 +242,21 @@ public interface TestHttp {
     )
     Stream<XXX> stream();
 
+}
+```
+
+### 程序内自定义额外扫描包
+
+```java
+@Configuration
+public class MyHttpHarder implements HttpHarder {
+    @Override
+    public Set<String> getMoreScanPackages() {
+        return new HashSet<String>() {{
+            add("xxx.xxx.xxx1");
+            add("xxx.xxx.xxx2");
+        }};
+    }
 }
 ```
 
