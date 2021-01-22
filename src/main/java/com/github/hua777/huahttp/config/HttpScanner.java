@@ -1,7 +1,6 @@
 package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.annotation.HuaHttp;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
@@ -28,8 +27,7 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
     }
 
     @Override
-    public @NotNull
-    Set<BeanDefinitionHolder> doScan(String @NotNull ... basePackages) {
+    public Set<BeanDefinitionHolder> doScan(String... basePackages) {
         log.info("HuaHttp 扫描路径（{}）下的 @HuaHttp", String.join(",", basePackages));
         Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
         for (BeanDefinitionHolder beanDefinition : beanDefinitions) {

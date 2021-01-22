@@ -17,8 +17,6 @@ import com.github.hua777.huahttp.config.limiter.InputStreamSupplier;
 import com.github.hua777.huahttp.enumrate.ParamType;
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.MapTool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
 
@@ -36,8 +34,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class HttpHandler implements InvocationHandler {
-
-    static Logger log = LoggerFactory.getLogger(HttpHandler.class);
 
     Class<?> interfaceClass;
 

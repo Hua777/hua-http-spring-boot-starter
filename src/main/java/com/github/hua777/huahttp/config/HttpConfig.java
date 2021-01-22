@@ -2,8 +2,6 @@ package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.property.HttpProperty;
 import com.github.hua777.huahttp.tool.PropertyTool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +9,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 @Configuration
 public class HttpConfig {
-
-    static Logger log = LoggerFactory.getLogger(HttpConfig.class);
 
     @Bean
     @ConditionalOnMissingBean(HttpProperty.class)

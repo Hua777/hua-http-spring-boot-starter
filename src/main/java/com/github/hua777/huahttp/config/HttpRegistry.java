@@ -2,9 +2,6 @@ package com.github.hua777.huahttp.config;
 
 import com.github.hua777.huahttp.config.harder.HttpHarder;
 import com.github.hua777.huahttp.property.HttpProperty;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -18,17 +15,15 @@ import java.util.List;
 
 public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
-    static Logger log = LoggerFactory.getLogger(HttpRegistry.class);
-
     public static ApplicationContext APP_CONTEXT;
 
     @Override
-    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         HttpRegistry.APP_CONTEXT = applicationContext;
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(@NotNull BeanDefinitionRegistry registry) throws BeansException {
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         List<String> defaultScanPackages = AutoConfigurationPackages.get(APP_CONTEXT);
         try {
             HttpProperty httpProperty = APP_CONTEXT.getBean(HttpProperty.class);
@@ -48,7 +43,7 @@ public class HttpRegistry implements BeanDefinitionRegistryPostProcessor, Applic
     }
 
     @Override
-    public void postProcessBeanFactory(@NotNull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 
     }
 }
