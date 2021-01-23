@@ -1,0 +1,13 @@
+logging:
+  level:
+    root: info
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: hua-http-spring-boot-test
+
+url:
+  local: http://localhost:${server.port}
