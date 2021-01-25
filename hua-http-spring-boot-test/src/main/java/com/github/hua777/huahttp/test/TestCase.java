@@ -1,11 +1,11 @@
 package com.github.hua777.huahttp.test;
 
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.github.hua777.huahttp.test.bean.TestRequest;
 import com.github.hua777.huahttp.test.global.Constant;
-import com.github.hua777.huahttp.test.http.DeleteService;
-import com.github.hua777.huahttp.test.http.GetService;
-import com.github.hua777.huahttp.test.http.HeaderService;
+import com.github.hua777.huahttp.test.http.*;
 import com.github.hua777.huahttp.test.http.config.HeaderHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Slf4j
@@ -30,6 +31,12 @@ public class TestCase {
 
     @Autowired
     DeleteService deleteService;
+
+    @Autowired
+    PostService postService;
+
+    @Autowired
+    PutService putService;
 
     @Test
     public void testHeader() {
@@ -58,6 +65,9 @@ public class TestCase {
         Assert.assertEquals(getService.case5(Constant.TEST, Constant.TEST, Constant.TEST), Constant.TEST + "," + Constant.TEST + "," + Constant.TEST);
         Assert.assertEquals((int) getService.case6("9"), 18);
         Assert.assertEquals(getService.case6noclass(9), 18);
+        LocalDateTime now = LocalDateTime.now();
+        Assert.assertEquals(DateUtil.format(getService.case7(now), "yyyyMMddHHmmss"),
+                DateUtil.format(now.plusDays(1), "yyyyMMddHHmmss"));
     }
 
     @Test
@@ -71,6 +81,37 @@ public class TestCase {
         Assert.assertEquals(deleteService.case5(Constant.TEST, Constant.TEST, Constant.TEST), Constant.TEST + "," + Constant.TEST + "," + Constant.TEST);
         Assert.assertEquals((int) deleteService.case6("9"), 18);
         Assert.assertEquals(deleteService.case6noclass(9), 18);
+        LocalDateTime now = LocalDateTime.now();
+        Assert.assertEquals(DateUtil.format(deleteService.case7(now), "yyyyMMddHHmmss"),
+                DateUtil.format(now.plusDays(1), "yyyyMMddHHmmss"));
+    }
+
+    @Test
+    public void testPost() {
+        LocalDateTime now = LocalDateTime.now();
+        TestRequest request = new TestRequest();
+        request.setBody1(Constant.TEST);
+        request.setBody2(now);
+        String result1 = Constant.TEST + "," + DateUtil.format(now, "yyyyMMddHHmmss") + "," + request.getBody1() + "," + DateUtil.format(request.getBody2(), "yyyyMMddHHmmss");
+        String result2 = request.getBody1() + "," + DateUtil.format(request.getBody2(), "yyyyMMddHHmmss");
+        Assert.assertEquals(postService.case1(Constant.TEST, now, request), result1);
+        Assert.assertEquals(postService.case1plat(Constant.TEST, now, request.getBody1(), request.getBody2()), result1);
+        Assert.assertEquals(postService.case2(request), result2);
+        Assert.assertEquals(postService.case2plat(request.getBody1(), request.getBody2()), result2);
+    }
+
+    @Test
+    public void testPut() {
+        LocalDateTime now = LocalDateTime.now();
+        TestRequest request = new TestRequest();
+        request.setBody1(Constant.TEST);
+        request.setBody2(now);
+        String result1 = Constant.TEST + "," + DateUtil.format(now, "yyyyMMddHHmmss") + "," + request.getBody1() + "," + DateUtil.format(request.getBody2(), "yyyyMMddHHmmss");
+        String result2 = request.getBody1() + "," + DateUtil.format(request.getBody2(), "yyyyMMddHHmmss");
+        Assert.assertEquals(putService.case1(Constant.TEST, now, request), result1);
+        Assert.assertEquals(putService.case1plat(Constant.TEST, now, request.getBody1(), request.getBody2()), result1);
+        Assert.assertEquals(putService.case2(request), result2);
+        Assert.assertEquals(putService.case2plat(request.getBody1(), request.getBody2()), result2);
     }
 
 }
