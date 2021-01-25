@@ -34,7 +34,7 @@ public class HttpScanner extends ClassPathBeanDefinitionScanner {
             GenericBeanDefinition definition = (GenericBeanDefinition) beanDefinition.getBeanDefinition();
             definition.getConstructorArgumentValues().addGenericArgumentValue(definition.getBeanClassName());
             definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
-            definition.setBeanClass(HuaHttpFactory.class);
+            definition.setBeanClass(HttpFactory.class);
         }
         return beanDefinitions;
     }

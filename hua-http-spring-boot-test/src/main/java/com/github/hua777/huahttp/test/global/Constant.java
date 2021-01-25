@@ -6,4 +6,5 @@ public class Constant {
     public static final String TOP_HEADER = "top-header";
     public static final String MY_HEADER = "my-header";
     public static final String CREATE_HEADER = "create-header";
+    public static final String OTHER = "OTHER";
 }

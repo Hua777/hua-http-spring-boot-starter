@@ -6,11 +6,11 @@ import org.springframework.beans.factory.FactoryBean;
 
 import java.lang.reflect.Proxy;
 
-public class HuaHttpFactory<T> implements FactoryBean<T> {
+public class HttpFactory<T> implements FactoryBean<T> {
 
-    static Logger log = LoggerFactory.getLogger(HuaHttpFactory.class);
+    static Logger log = LoggerFactory.getLogger(HttpFactory.class);
 
-    public HuaHttpFactory(Class<T> interfaceClass) {
+    public HttpFactory(Class<T> interfaceClass) {
         this.interfaceClass = interfaceClass;
     }
 
