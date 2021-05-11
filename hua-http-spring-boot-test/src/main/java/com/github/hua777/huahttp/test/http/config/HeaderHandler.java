@@ -5,6 +5,7 @@ import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.github.hua777.huahttp.config.handler.HttpHandler;
+import com.github.hua777.huahttp.enumrate.ParamType;
 import com.github.hua777.huahttp.test.global.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +21,7 @@ public class HeaderHandler implements HttpHandler {
     public static ThreadLocal<String> RESPONSE_STRING = new ThreadLocal<>();
 
     @Override
-    public void beforeHttpMethod(HttpRequest request) {
+    public void beforeHttpMethod(HttpRequest request, Map<ParamType, Map<String, Object>> params) {
         URL.set(request.getUrl());
     }
 

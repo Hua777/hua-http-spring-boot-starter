@@ -35,14 +35,12 @@ import java.util.stream.Stream;
 
 public class HttpHandler implements InvocationHandler {
 
+    static Environment environment = HttpRegistry.APP_CONTEXT.getBean(Environment.class);
+    static HttpProperty httpProperty = HttpRegistry.APP_CONTEXT.getBean(HttpProperty.class);
     Class<?> interfaceClass;
-
     public HttpHandler(Class<?> interfaceClass) {
         this.interfaceClass = interfaceClass;
     }
-
-    static Environment environment = HttpRegistry.APP_CONTEXT.getBean(Environment.class);
-    static HttpProperty httpProperty = HttpRegistry.APP_CONTEXT.getBean(HttpProperty.class);
 
     private static String getValue(String key) {
         return ValueMan.parse(key).toString(environment);
@@ -53,7 +51,7 @@ public class HttpHandler implements InvocationHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private static Supplier<Map<String, Object>> getHeadersCreator(Class<?> type) {
+    private static Supplier<Map<String, Object>> getParamCreator(Class<?> type) {
         return (Supplier<Map<String, Object>>) HttpRegistry.APP_CONTEXT.getBean(type);
     }
 
@@ -116,7 +114,7 @@ public class HttpHandler implements InvocationHandler {
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
             }
-            MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
+            MapTool.mergeToLeft(param, getParamCreator(huaParam.create()).get());
         }
         //endregion
 
@@ -132,7 +130,7 @@ public class HttpHandler implements InvocationHandler {
             if (huaParam.create().isAssignableFrom(DefaultParamCreator.class)) {
                 continue;
             }
-            MapTool.mergeToLeft(param, getHeadersCreator(huaParam.create()).get());
+            MapTool.mergeToLeft(param, getParamCreator(huaParam.create()).get());
         }
         //endregion
 
@@ -217,7 +215,7 @@ public class HttpHandler implements InvocationHandler {
         //endregion
 
         if (httpHandler != null) {
-            httpHandler.beforeHttpMethod(request);
+            httpHandler.beforeHttpMethod(request, params);
         }
 
         HttpResponse response;

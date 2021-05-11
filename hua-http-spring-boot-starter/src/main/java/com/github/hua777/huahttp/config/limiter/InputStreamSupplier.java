@@ -17,6 +17,8 @@ import java.util.function.Supplier;
 public class InputStreamSupplier implements Supplier<Object> {
 
     static Logger log = LoggerFactory.getLogger(InputStreamSupplier.class);
+    Type actualType;
+    Queue<String> dataQueue = new ConcurrentLinkedQueue<>();
 
     public InputStreamSupplier(
             Type actualType,
@@ -46,10 +48,6 @@ public class InputStreamSupplier implements Supplier<Object> {
         }).start();
 
     }
-
-    Type actualType;
-
-    Queue<String> dataQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public synchronized Object get() {

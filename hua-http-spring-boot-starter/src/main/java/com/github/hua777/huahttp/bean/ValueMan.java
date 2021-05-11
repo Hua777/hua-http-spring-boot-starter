@@ -11,21 +11,10 @@ import java.util.regex.Pattern;
 public class ValueMan {
 
     static Pattern pattern = Pattern.compile("\\$\\{[^}]+\\}");
+    List<String> splits = new ArrayList<>();
 
     private ValueMan() {
 
-    }
-
-    List<String> splits = new ArrayList<>();
-
-    public List<String> getSplits() {
-        return splits;
-    }
-
-    private void addSplit(String split) {
-        if (StrUtil.isNotEmpty(split)) {
-            splits.add(split);
-        }
     }
 
     public static ValueMan parse(String originValue) {
@@ -43,6 +32,16 @@ public class ValueMan {
         }
         result.addSplit(originValue.substring(prevStart, prevEnd));
         return result;
+    }
+
+    public List<String> getSplits() {
+        return splits;
+    }
+
+    private void addSplit(String split) {
+        if (StrUtil.isNotEmpty(split)) {
+            splits.add(split);
+        }
     }
 
     @Override

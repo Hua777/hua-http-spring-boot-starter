@@ -9,12 +9,11 @@ import java.lang.reflect.Proxy;
 public class HttpFactory<T> implements FactoryBean<T> {
 
     static Logger log = LoggerFactory.getLogger(HttpFactory.class);
+    Class<T> interfaceClass;
 
     public HttpFactory(Class<T> interfaceClass) {
         this.interfaceClass = interfaceClass;
     }
-
-    Class<T> interfaceClass;
 
     @SuppressWarnings("unchecked")
     @Override

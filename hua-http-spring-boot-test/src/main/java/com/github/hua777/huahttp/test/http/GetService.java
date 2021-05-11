@@ -1,7 +1,6 @@
 package com.github.hua777.huahttp.test.http;
 
 import com.github.hua777.huahttp.annotation.HuaHttp;
-import com.github.hua777.huahttp.annotation.extend.method.HuaDelete;
 import com.github.hua777.huahttp.annotation.extend.method.HuaGet;
 import com.github.hua777.huahttp.annotation.extend.param.HuaPath;
 import com.github.hua777.huahttp.annotation.extend.param.HuaQuery;
